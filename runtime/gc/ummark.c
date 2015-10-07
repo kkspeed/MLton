@@ -15,7 +15,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    if (DEBUG_MEM) {
+    //    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -31,6 +31,12 @@ void getObjectType(GC_state s, objptr *opp) {
             break;
         case ARRAY_TAG:
             fprintf(stderr, "ARRAY!\n");
+            if (p >= s->tlsfarheap.start &&
+                p < s->tlsfarheap.start + s->tlsfarheap.size) {
+                fprintf(stderr, "  ON TLSF HEAP!\n");
+            } else {
+                fprintf(stderr, "  NOT ON TLSF HEAP\n");
+            }
             break;
         case STACK_TAG:
             fprintf(stderr, "STACK\n");
@@ -38,7 +44,7 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-    }
+        //    }
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -53,8 +59,8 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-//    if (DEBUG_MEM)
-    getObjectType(s, opp);
+    if (DEBUG_MEM)
+        getObjectType(s, opp);
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
@@ -116,39 +122,15 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
         }
     }
 
-    if (tag == ARRAY_TAG &&
-        p >= s->umarheap.start &&
-        p < s->umarheap.start + s->umarheap.size) {
-        GC_UM_Array_Chunk fst_leaf = (GC_UM_Array_Chunk)
-            (p - GC_HEADER_SIZE - GC_HEADER_SIZE);
-        if (DEBUG_MEM) {
-            fprintf(stderr, "umDfsMarkObjects: marking array: %x, markmode: %d, "
-                    "magic: %d, length: %d\n", fst_leaf, m,
-                    fst_leaf->array_chunk_magic, fst_leaf->array_chunk_length);
+    if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
+        p < s->tlsfarheap.size + s->tlsfarheap.start) {
+        GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
+        //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
+        if (m == MARK_MODE) {
+            arrayHeader->array_header |= UM_CHUNK_HEADER_MASK;
+        } else {
+            arrayHeader->array_header &= ~UM_CHUNK_HEADER_MASK;
         }
-
-        if (fst_leaf->array_num_chunks > 1 &&
-            fst_leaf->array_chunk_length > 0) {
-            GC_UM_Array_Chunk root = fst_leaf->root;
-//            size_t length = root->array_chunk_length;
-//
-//            size_t i, j;
-//            size_t elem_size = bytesNonObjptrs + numObjptrs * OBJPTR_SIZE;
-//            for (i=0; i<length; i++) {
-//                pointer pobj = UM_Array_offset(s, p, i, elem_size, 0) +
-//                    bytesNonObjptrs;
-//
-//                for (j=0; j<numObjptrs; j++) {
-//                    if (m == MARK_MODE)
-//                        foreachObjptrInObject(s, pobj, umDfsMarkObjectsMark, true);
-//                    else
-//                        foreachObjptrInObject(s, pobj, umDfsMarkObjectsUnMark, true);
-//                    pobj += OBJPTR_SIZE;
-//                }
-//            }
-            markUMArrayChunks(s, root, m);
-        } else
-            markUMArrayChunks(s, fst_leaf, m);
     }
 
     if (numObjptrs > 0) {

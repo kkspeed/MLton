@@ -117,13 +117,14 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       p += OBJPTR_SIZE;
     }
   } else if (ARRAY_TAG == tag &&
-             ((p >= s->umarheap.start + s->umarheap.size) ||
-              (p < s->umarheap.start))) {
+             ((p >= s->tlsfarheap.start + s->tlsfarheap.size) ||
+              (p < s->tlsfarheap.start))) {
     size_t bytesPerElement;
     size_t dataBytes;
     pointer last;
     GC_arrayLength numElements;
 
+    fprintf(stderr, "HERE\n");
     numElements = getArrayLength (p);
     bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
     dataBytes = numElements * bytesPerElement;
@@ -164,26 +165,17 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     }
     p += alignWithExtra (s, dataBytes, GC_ARRAY_HEADER_SIZE);
   } else if (ARRAY_TAG == tag) {
-      GC_UM_Array_Chunk fst_leaf = (GC_UM_Array_Chunk)(p - GC_HEADER_SIZE - GC_HEADER_SIZE);
-      if (fst_leaf->array_chunk_length > 0) {
-          size_t length = fst_leaf->array_chunk_length;
-          GC_UM_Array_Chunk cur_chunk = fst_leaf;
-          size_t i, j;
-          size_t elem_size = bytesNonObjptrs + numObjptrs * OBJPTR_SIZE;
-          for (i=0; i<length; i++) {
-              pointer start = (pointer)&(cur_chunk->ml_array_payload.ml_object[0]);
-              size_t offset = (i % fst_leaf->array_chunk_numObjs) * elem_size + bytesNonObjptrs;
-              pointer pobj = start + offset;
-              for (j=0; j<numObjptrs; j++) {
-                  callIfIsObjptr (s, f, (objptr*)pobj);
-                  pobj += OBJPTR_SIZE;
-              }
-
-              if (i > 0 && i % fst_leaf->array_chunk_numObjs == 0)
-                  cur_chunk = cur_chunk->next_chunk;
+      GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
+      size_t i, j;
+      pointer pobj = p;
+      for (i=0; i<arrayHeader->array_length; i++) {
+          pobj += bytesNonObjptrs;
+          for (j=0; j<numObjptrs; j++) {
+              callIfIsObjptr(s, f, (objptr*)pobj);
+              pobj += OBJPTR_SIZE;
           }
       }
-  }else { /* stack */
+  } else { /* stack */
     GC_stack stack;
     pointer top, bottom;
     unsigned int i;

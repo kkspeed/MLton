@@ -16,14 +16,19 @@ pointer GC_arrayAllocate(GC_state s,
 
     if (!array) {
         GC_collect(s, 0, true);
+        fprintf(stderr, "Cannot allocate array, GC!\n");
         array = (pointer) tlsf_malloc(allocSize);
     }
 
     GC_TLSF_array arrayHeader = (GC_TLSF_array) array;
+    arrayHeader->magic = 9933;
+    arrayHeader->next = s->tlsfarheap.allocatedArray->next;
+    s->tlsfarheap.allocatedArray->next = arrayHeader;
+
     arrayHeader->array_ml_header = header;
     arrayHeader->array_header = 0;
     arrayHeader->array_length = numElements;
-    pointer frontier = array + sizeof(GC_TLSF_array);
+    pointer frontier = array + sizeof(struct GC_TLSF_array);
     pointer last = frontier + arraySize;
 
     if (1 <= numObjptrs and 0 < numElements) {
@@ -50,6 +55,8 @@ pointer GC_arrayAllocate(GC_state s,
         }
     }
 
+    //    fprintf(stderr, "Array magic... 0x%x, %d, 0x%x\n", arrayHeader,
+    //            arrayHeader->magic, frontier);
     return frontier;
 }
 
@@ -62,7 +69,12 @@ bool createTLSFArrayHeap(GC_state s, GC_TLSF_heap h,
         fprintf(stderr, "[GC: MMap Failure]\n");
         return FALSE;
     }
+
+
     h->start = newStart;
-    h->allocatedArray = NULL;
+    h->size = desiredSize;
+    //    fprintf(stderr, "Mapping TLSF: 0x%x, size: %d\n", h->start, h->size);
+    h->allocatedArray = (GC_TLSF_array)malloc(sizeof(struct GC_TLSF_array));
+    h->allocatedArray->next = NULL;
     init_memory_pool(desiredSize, (void*) newStart);
 }

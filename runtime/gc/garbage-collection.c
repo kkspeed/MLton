@@ -149,30 +149,18 @@ void performUMGC(GC_state s,
     }
         //    }
 
-    step = sizeof(struct GC_UM_Array_Chunk);
-    end = s->umarheap.start + s->umarheap.size - step;
-
-    for (pchunk=s->umarheap.start;
-         pchunk < end;
-         pchunk += step) {
-        GC_UM_Array_Chunk pc = (GC_UM_Array_Chunk)pchunk;
-        if ((pc->array_chunk_header & UM_CHUNK_IN_USE) &&
-            (!(pc->array_chunk_header & UM_CHUNK_HEADER_MASK))) {
-            if (DEBUG_MEM) {
-                fprintf(stderr, "Collecting array: "FMTPTR", %d, %d\n",
-                        (uintptr_t)pc, pc->array_chunk_magic,
-                        pc->array_chunk_header);
-            }
-            insertArrayFreeChunk(s, &(s->umarheap), pchunk);
+    GC_TLSF_array current = s->tlsfarheap.allocatedArray;
+    while (current->next) {
+        if (!(current->next->array_header & UM_CHUNK_HEADER_MASK)) {
+            GC_TLSF_array tmp = current->next;
+            current->next = current->next->next;
+            tlsf_free((void*)tmp);
+        } else {
+            current = current->next;
         }
-
-        /* if (!fullGC && */
-        /*     s->fl_array_chunks >= ensureArrayChunksAvailable) { */
-        /*     fprintf(stderr, "Array chunk ensured\n"); */
-        /*     break; */
-        /* } */
     }
 
+    //    fprintf(stderr, "GC returend!\n");
     foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
 
@@ -347,8 +335,7 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     if (!force) {
-        if ((s->fl_chunks > 2000) &&
-            (s->fl_array_chunks > 1000000))
+        if (s->fl_chunks > 200)
             return;
     }
 

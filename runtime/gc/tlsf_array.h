@@ -2,13 +2,16 @@
 
 typedef struct GC_TLSF_array {
     struct GC_TLSF_array* next;
+    Word32_t magic;
     Word32_t array_header;
+    Word32_t array_counter;
     Word32_t array_length;
     Word32_t array_ml_header;
 }* GC_TLSF_array;
 
 typedef struct GC_TLSF_heap {
     pointer start;
+    size_t size;
     GC_TLSF_array allocatedArray;
 } *GC_TLSF_heap;
 

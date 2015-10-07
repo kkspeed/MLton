@@ -38,7 +38,7 @@ type pass = {name: string,
              doit: Program.t -> Program.t}
 
 val ssa2PassesDefault =
-(*   {name = "deepFlatten", doit = DeepFlatten.transform2} :: *)
+  {name = "deepFlatten", doit = DeepFlatten.transform2} ::
    {name = "refFlatten", doit = RefFlatten.transform2} ::
    {name = "removeUnused5", doit = RemoveUnused2.transform2} ::
    {name = "zone", doit = Zone.transform2} ::
@@ -64,7 +64,7 @@ local
 
    val passGens =
       List.map([("addProfile", Profile2.addProfile),
-(*                ("deepFlatten", DeepFlatten.transform2), *)
+               ("deepFlatten", DeepFlatten.transform2),
                 ("dropProfile", Profile2.dropProfile),
                 ("refFlatten", RefFlatten.transform2),
                 ("removeUnused", RemoveUnused2.transform2),

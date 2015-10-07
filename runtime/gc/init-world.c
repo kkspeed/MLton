@@ -108,7 +108,8 @@ void initWorld (GC_state s) {
   size_t avail_mem = s->controls.maxHeap ? s->controls.maxHeap : (MEM_AVAILABLE * MEGABYTES);
   createUMHeap (s, &s->umheap, avail_mem, avail_mem);
 
-  createUMArrayHeap (s, &s->umarheap, avail_mem, avail_mem);
+  //  createUMArrayHeap (s, &s->umarheap, avail_mem, avail_mem);
+  createTLSFArrayHeap(s, &s->tlsfarheap, avail_mem);
 
   createHeap (s, &s->heap, 100*MEGABYTES, 100*MEGABYTES);
 

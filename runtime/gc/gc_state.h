@@ -53,6 +53,7 @@ struct GC_state {
   struct GC_heap heap;
   struct GC_UM_heap umheap;
   struct GC_UM_Array_heap umarheap;
+    struct GC_TLSF_heap tlsfarheap;
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   int (*loadGlobals)(FILE *f); /* loads the globals from the file. */

@@ -192,8 +192,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shrink}, p)
             val p = pass ({name = "chunkedAllocation",
                                 doit = ChunkedAllocation.transform}, p)
-            val p = pass ({name = "insertLimitChecks",
-                           doit = LimitCheck.transform}, p)
+            (* val p = pass ({name = "insertLimitChecks", *)
+            (*                doit = LimitCheck.transform}, p) *)
             val p = pass ({name = "insertSignalChecks",
                            doit = SignalCheck.transform}, p)
             val p = pass ({name = "implementHandlers",

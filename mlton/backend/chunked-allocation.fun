@@ -110,8 +110,35 @@ fun handleFunction (f: Function.t): Function.t =
       val newBlocks = ref []
       val () = Vector.foreach
                (blocks,
-                fn block =>
-                   List.push (newBlocks, insertChunkedAllocation block))
+                fn (Block.T {args, kind, label, statements, transfer}) =>
+                   let
+                       val transfer =
+                           case transfer of
+                               Transfer.CCall {args, func, return} =>
+                               (if CFunction.ensuresBytesFree func
+                                then
+                                    Transfer.CCall
+                                        {args = (Vector.map
+                                                 (args, fn z =>
+                                                  case z of
+                                                     Operand.EnsuresBytesFree =>
+                                                        Operand.word
+                                                        (WordX.fromIntInf
+                                                         (Bytes.toIntInf Bytes.zero,
+                                                          WordSize.csize ()))
+                                                   | _ => z)),
+                                         func = func,
+                                         return = return}
+                                else transfer)
+                            | _  => transfer
+                       val block = Block.T {args = args,
+                                            kind = kind,
+                                            label = label,
+                                            statements = statements,
+                                            transfer = transfer}
+                   in
+                       List.push (newBlocks, insertChunkedAllocation block)
+                   end)
   in
       Function.new { args = args
                    , blocks = Vector.fromList (List.concat (!newBlocks))

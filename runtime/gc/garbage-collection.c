@@ -115,7 +115,9 @@ void performUMGC(GC_state s,
 #endif
 
     for (int i=0; i<s->root_set_size; i++) {
-        foreachObjptrInObject(s, &(s->root_sets[i]), umDfsMarkObjectsMark, false);
+        //        pointer p = *(s->root_sets[i]);
+        //foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
+        umDfsMarkObjectsMark(s, s->root_sets[i]);
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
@@ -123,7 +125,6 @@ void performUMGC(GC_state s,
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
 
-    //    if (s->umheap.fl_chunks <= 2000) {
     for (pchunk=s->umheap.start;
          pchunk < end;
          pchunk+=step) {
@@ -141,7 +142,6 @@ void performUMGC(GC_state s,
             break;
         }
     }
-        //    }
 
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
     while (current->next) {
@@ -149,7 +149,6 @@ void performUMGC(GC_state s,
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             pthread_mutex_lock(&(s->array_mutex));
-            fprintf(stderr, "Collecting array: haha\n");
             tlsf_free((void*)tmp);
             pthread_mutex_unlock(&(s->array_mutex));
         } else {
@@ -158,8 +157,9 @@ void performUMGC(GC_state s,
     }
 
     for (int i=0; i<s->root_set_size; i++) {
-        foreachObjptrInObject(s, &(s->root_sets[i]), umDfsMarkObjectsUnMark, false);
-        //        umDfsMarkObjectsUnMark(s, (s->root_sets[i]));
+        //        pointer p = *(s->root_sets[i]);
+        //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
+        umDfsMarkObjectsUnMark(s, (s->root_sets[i]));
     }
 
     //    fprintf(stderr, "GC returend!\n");
@@ -338,8 +338,7 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void collectRootSet(GC_state s, objptr* opp)
 {
-    //    getObjectType(s, opp);
-    s->root_sets[s->root_set_size++] = *opp;
+    s->root_sets[s->root_set_size++] = opp;
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
@@ -355,18 +354,19 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     /* fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version, */
     /*         s->gc_object_version); */
     s->object_alloc_version++;
-    //    if (s->gc_work == 0) {
-    s->root_set_size = 0;
-    GC_stack currentStack = getStackCurrent(s);
-
-    for (unsigned int i=0; i<s->globalsLength; i++) {
-        s->root_sets[s->root_set_size++] = (objptr)(s->globals[i]);
+    if (s->gc_work == 0) {
+        s->root_set_size = 0;
+        enter(s);
+        getThreadCurrent(s)->bytesNeeded = bytesRequested;
+        switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
+        GC_stack currentStack = getStackCurrent(s);
+        foreachGlobalObjptr(s, collectRootSet);
+        foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
+        leave(s);
+        s->gc_work = 1;
+    } else {
+        //GC_collect_real(s, 0, true);
+        sleep(1);
     }
-    foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
-
-    s->gc_work = 1;
-        //    } else {
-    GC_collect_real(s, 0, true);
-        //    }
     //    GC_collect_real(s, bytesRequested, true);
 }

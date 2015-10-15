@@ -83,7 +83,7 @@ struct GC_state {
   GC_moduleKind gc_module;
   struct GC_heap infHeap;
   pointer infFrontier;
-  objptr* root_sets;
+  objptr** root_sets;
   uint32_t root_set_size;
   uint64_t gc_object_version;
   uint64_t object_alloc_version;

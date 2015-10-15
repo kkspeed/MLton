@@ -29,6 +29,7 @@ GC_UM_Chunk allocNextChunk(GC_state s,
     c->chunk_header = UM_CHUNK_HEADER_CLEAN;
     s->fl_chunks -= 1;
     c->object_version = s->object_alloc_version;
+    asm ("" ::: "memory");
     pthread_mutex_unlock(&(s->object_mutex));
     return c;
 }

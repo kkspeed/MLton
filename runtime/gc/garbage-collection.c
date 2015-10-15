@@ -117,7 +117,7 @@ void performUMGC(GC_state s,
     for (int i=0; i<s->root_set_size; i++) {
         //        pointer p = *(s->root_sets[i]);
         //foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
-        umDfsMarkObjectsMark(s, s->root_sets[i]);
+        umDfsMarkObjectsMark(s, &(s->root_sets[i]));
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
@@ -146,9 +146,9 @@ void performUMGC(GC_state s,
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
     while (current->next) {
         if (current->next->object_version < s->gc_object_version) {
+            pthread_mutex_lock(&(s->array_mutex));
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
-            pthread_mutex_lock(&(s->array_mutex));
             tlsf_free((void*)tmp);
             pthread_mutex_unlock(&(s->array_mutex));
         } else {
@@ -159,7 +159,7 @@ void performUMGC(GC_state s,
     for (int i=0; i<s->root_set_size; i++) {
         //        pointer p = *(s->root_sets[i]);
         //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
-        umDfsMarkObjectsUnMark(s, (s->root_sets[i]));
+        umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
     }
 
     //    fprintf(stderr, "GC returend!\n");
@@ -318,6 +318,7 @@ void ensureHasHeapBytesFree (GC_state s,
 }
 
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
+  fprintf(stderr, "Collecting!\n");
   enter (s);
   /* When the mutator requests zero bytes, it may actually need as
    * much as GC_HEAP_LIMIT_SLOP.
@@ -330,7 +331,6 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
   assert (invariantForMutatorFrontier(s));
   assert (invariantForMutatorStack(s));
   leave (s);
-
   if (DEBUG_MEM) {
       fprintf(stderr, "GC_collect done\n");
   }
@@ -338,7 +338,7 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void collectRootSet(GC_state s, objptr* opp)
 {
-    s->root_sets[s->root_set_size++] = opp;
+    s->root_sets[s->root_set_size++] = *opp;
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
@@ -353,20 +353,27 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
     /* fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version, */
     /*         s->gc_object_version); */
-    s->object_alloc_version++;
-    if (s->gc_work == 0) {
-        s->root_set_size = 0;
-        enter(s);
-        getThreadCurrent(s)->bytesNeeded = bytesRequested;
-        switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-        GC_stack currentStack = getStackCurrent(s);
-        foreachGlobalObjptr(s, collectRootSet);
-        foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
-        leave(s);
-        s->gc_work = 1;
-    } else {
-        //GC_collect_real(s, 0, true);
-        sleep(1);
+
+
+    if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
+        if (s->gc_work == 0) {
+            s->object_alloc_version++;
+
+            s->root_set_size = 0;
+            enter(s);
+            getThreadCurrent(s)->bytesNeeded = bytesRequested;
+            switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
+            GC_stack currentStack = getStackCurrent(s);
+            foreachGlobalObjptr(s, collectRootSet);
+            foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
+            leave(s);
+
+            fprintf(stderr, "Got root set, size: %d!\n", s->root_set_size);
+            s->gc_work = 1;
+        }
+        pthread_mutex_unlock(&s->gc_stat_mutex);
     }
+        //GC_collect_real(s, 0, true);
+        //        sleep(1);
     //    GC_collect_real(s, bytesRequested, true);
 }

@@ -14,8 +14,9 @@ pointer GC_arrayAllocate(GC_state s,
 
     pthread_mutex_lock(&(s->array_mutex));
     pointer array = (pointer) tlsf_malloc(allocSize);
-    pthread_mutex_unlock(&(s->array_mutex));
 
+
+    /* Array criteria needs to be addressed */
     if (!array) {
         GC_collect(s, 0, true);
         fprintf(stderr, "Cannot allocate array, GC!\n");
@@ -27,6 +28,7 @@ pointer GC_arrayAllocate(GC_state s,
     arrayHeader->next = s->tlsfarheap.allocatedArray->next;
     s->tlsfarheap.allocatedArray->next = arrayHeader;
 
+    pthread_mutex_unlock(&(s->array_mutex));
     arrayHeader->array_ml_header = header;
     arrayHeader->array_header = 0;
     arrayHeader->array_length = numElements;

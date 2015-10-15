@@ -103,16 +103,17 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
             pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
-            if (DEBUG_MEM) {
+            //            if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
                         " mark_mode: %d, objptrs: %d\n", (uintptr_t)pchunk,
                         pchunk->sentinel,
                         (m == MARK_MODE), numObjptrs);
-            }
+                //            }
 
             if (NULL != pchunk->next_chunk) {
-                pchunk->next_chunk->object_version = MAX_VERSION(s->gc_object_version,
-                                                                 pchunk->next_chunk->object_version);
+                pchunk->next_chunk->object_version =
+                    MAX_VERSION(s->gc_object_version,
+                                pchunk->next_chunk->object_version);
             }
         }
     }
@@ -120,7 +121,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
         p < s->tlsfarheap.size + s->tlsfarheap.start) {
         GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
-        // fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
+        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
         arrayHeader->object_version = MAX_VERSION(s->gc_object_version,
                                                   arrayHeader->object_version);
     }

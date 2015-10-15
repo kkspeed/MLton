@@ -124,7 +124,6 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     pointer last;
     GC_arrayLength numElements;
 
-    fprintf(stderr, "HERE\n");
     numElements = getArrayLength (p);
     bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
     dataBytes = numElements * bytesPerElement;

@@ -114,9 +114,11 @@ void performUMGC(GC_state s,
             s->fl_array_chunks);
 #endif
 
-    GC_stack currentStack = getStackCurrent(s);
-    foreachGlobalObjptr (s, umDfsMarkObjectsMark);
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
+    for (int i=0; i<s->root_set_size; i++) {
+        objptr p = s->root_sets[i];
+        if (p)
+            umDfsMarkObjectsMark(s, &p);
+    }
 
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
@@ -147,16 +149,24 @@ void performUMGC(GC_state s,
         if (current->next->object_version < s->gc_object_version) {
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
+            pthread_mutex_lock(&(s->array_mutex));
             tlsf_free((void*)tmp);
+            pthread_mutex_unlock(&(s->array_mutex));
         } else {
             current = current->next;
         }
     }
 
-    //    fprintf(stderr, "GC returend!\n");
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
-    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
+    for (int i=0; i<s->root_set_size; i++) {
+        objptr p = s->root_sets[i];
+        if (p)
+            umDfsMarkObjectsUnMark(s, &p);
+    }
 
+    //    fprintf(stderr, "GC returend!\n");
+    //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
+    //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
+    s->root_set_size = 0;
     s->gc_object_version = s->object_alloc_version;
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
@@ -327,19 +337,33 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
   }
 }
 
+void collectRootSet(GC_state s, objptr* opp)
+{
+    s->root_sets[s->root_set_size++] = *opp;
+}
+
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
-    if (!force) {
-        if (s->fl_chunks > 200)
-            return;
-    }
+    /* if (!force) { */
+    /*     if (s->fl_chunks > 200) */
+    /*         return; */
+    /* } */
 
-    if (s->gc_module == GC_NONE) {
-        return;
-    }
+    /* if (s->gc_module == GC_NONE) { */
+    /*     return; */
+    /* } */
 
-    fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version,
-            s->gc_object_version);
+    /* fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version, */
+    /*         s->gc_object_version); */
     s->object_alloc_version++;
 
-    GC_collect_real(s, bytesRequested, true);
+    if (s->gc_work == 0) {
+        GC_stack currentStack = getStackCurrent(s);
+        foreachGlobalObjptr (s, collectRootSet);
+        foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
+
+        s->gc_work = 1;
+    } else {
+        sleep(1);
+    }
+    //    GC_collect_real(s, bytesRequested, true);
 }

@@ -57,6 +57,7 @@
 // #include <wctype.h>
 
 #include <gmp.h>
+#include <pthread.h>
 
 
 #define COMPILE_TIME_ASSERT(name, x) \

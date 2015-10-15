@@ -91,6 +91,17 @@ void initVectors (GC_state s) {
   s->frontier = frontier;
 }
 
+void gc_thread_func(void* _gc_stat)
+{
+  GC_state s = (GC_state) _gc_stat;
+  while (true) {
+      while (s->gc_work == 0)
+          pthread_yield();
+      GC_collect_real(s, 0, true);
+      s->gc_work = 0;
+  }
+}
+
 void initWorld (GC_state s) {
   uint32_t i;
   pointer start;
@@ -126,8 +137,10 @@ void initWorld (GC_state s) {
   s->infFrontier = s->infHeap.start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  s->object_alloc_version = 0;
+  s->object_alloc_version = 1;
   s->gc_object_version = 0;
+  s->root_sets = (objptr*)malloc(sizeof(objptr)* 1024 * 1024);
+  s->root_set_size = 0;
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
@@ -141,6 +154,14 @@ void initWorld (GC_state s) {
 
   thread = newThread (s, sizeofStackInitialReserved (s));
   switchToThread (s, pointerToObjptr((pointer)thread - offsetofThread (s), s->heap.start));
+
+  pthread_mutex_init(&(s->object_mutex), NULL);
+  pthread_mutex_init(&(s->array_mutex), NULL);
+
+  s->gc_work = 0;
+
+  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
+
   if (DEBUG_MEM) {
       fprintf(stderr, "UMFrontier start: "FMTPTR"\n", (uintptr_t)(s->umfrontier));
   }

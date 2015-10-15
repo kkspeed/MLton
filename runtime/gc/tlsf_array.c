@@ -12,7 +12,9 @@ pointer GC_arrayAllocate(GC_state s,
     size_t arraySize = bytesPerElement * numElements;
     size_t allocSize = sizeof(struct GC_TLSF_array) + arraySize;
 
+    pthread_mutex_lock(&(s->array_mutex));
     pointer array = (pointer) tlsf_malloc(allocSize);
+    pthread_mutex_unlock(&(s->array_mutex));
 
     if (!array) {
         GC_collect(s, 0, true);

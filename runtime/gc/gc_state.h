@@ -83,8 +83,14 @@ struct GC_state {
   GC_moduleKind gc_module;
   struct GC_heap infHeap;
   pointer infFrontier;
+  objptr* root_sets;
+  uint32_t root_set_size;
   uint64_t gc_object_version;
   uint64_t object_alloc_version;
+  int gc_work;
+  pthread_mutex_t object_mutex;
+  pthread_mutex_t array_mutex;
+  pthread_t gc_thread;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

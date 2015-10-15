@@ -116,8 +116,7 @@ void performUMGC(GC_state s,
 
     for (int i=0; i<s->root_set_size; i++) {
         objptr p = s->root_sets[i];
-        if (p)
-            umDfsMarkObjectsMark(s, &p);
+        umDfsMarkObjectsUnMark(s, &p);
     }
 
     pointer pchunk;
@@ -159,8 +158,7 @@ void performUMGC(GC_state s,
 
     for (int i=0; i<s->root_set_size; i++) {
         objptr p = s->root_sets[i];
-        if (p)
-            umDfsMarkObjectsUnMark(s, &p);
+        umDfsMarkObjectsUnMark(s, p);
     }
 
     //    fprintf(stderr, "GC returend!\n");
@@ -355,8 +353,8 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     /* fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version, */
     /*         s->gc_object_version); */
     s->object_alloc_version++;
-
     if (s->gc_work == 0) {
+        s->root_set_size = 0;
         GC_stack currentStack = getStackCurrent(s);
         foreachGlobalObjptr (s, collectRootSet);
         foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);

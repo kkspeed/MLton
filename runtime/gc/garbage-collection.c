@@ -118,13 +118,6 @@ void performUMGC(GC_state s,
     foreachGlobalObjptr (s, umDfsMarkObjectsMark);
     foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
 
-//    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
-//    GC_stack currentStack = getStackCurrent(s);
-//    foreachObjptrInObject(s, currentStack,
-//                          dfsMarkWithoutHashConsWithLinkWeaks, FALSE);
-
-
-
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
@@ -135,10 +128,10 @@ void performUMGC(GC_state s,
          pchunk+=step) {
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
-            (!(pc->chunk_header & UM_CHUNK_HEADER_MASK))) {
+            pc->object_version < s->gc_object_version) {
             if (DEBUG_MEM) {
                 fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
-                        (uintptr_t)pc, pc->sentinel, pc->chunk_header);
+                        (uintptr_t)pc, pc->sentinel, pc->object_version);
             }
             insertFreeChunk(s, &(s->umheap), pchunk);
         }
@@ -151,7 +144,7 @@ void performUMGC(GC_state s,
 
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
     while (current->next) {
-        if (!(current->next->array_header & UM_CHUNK_HEADER_MASK)) {
+        if (current->next->object_version < s->gc_object_version) {
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
@@ -164,6 +157,7 @@ void performUMGC(GC_state s,
     foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
 
+    s->gc_object_version = s->object_alloc_version;
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
     fprintf(stderr, "[GC] Time: %ld, Free chunk: %d, Free array chunk: %d, "
@@ -342,6 +336,10 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     if (s->gc_module == GC_NONE) {
         return;
     }
+
+    fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version,
+            s->gc_object_version);
+    s->object_alloc_version++;
 
     GC_collect_real(s, bytesRequested, true);
 }

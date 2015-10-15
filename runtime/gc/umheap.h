@@ -5,6 +5,7 @@ typedef struct GC_UM_Chunk {
     //    unsigned char ml_safe_region[UM_CHUNK_PAYLOAD_SAFE_REGION];
     Word32_t chunk_header;
     size_t sentinel;
+    uint64_t object_version;
     struct GC_UM_Chunk* next_chunk;
 } *GC_UM_Chunk;
 

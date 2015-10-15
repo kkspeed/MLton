@@ -3,6 +3,7 @@
 typedef struct GC_TLSF_array {
     struct GC_TLSF_array* next;
     Word32_t magic;
+    Word64_t object_version;
     Word32_t array_header;
     Word32_t array_counter;
     Word32_t array_length;

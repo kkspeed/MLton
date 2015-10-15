@@ -27,6 +27,7 @@ GC_UM_Chunk allocNextChunk(GC_state s,
     c->next_chunk = NULL;
     c->chunk_header = UM_CHUNK_HEADER_CLEAN;
     s->fl_chunks -= 1;
+    c->object_version = s->object_alloc_version;
     return c;
 }
 

@@ -1,3 +1,5 @@
+#define MAX_VERSION(a, b) ((a) > (b) ? (a) : (b))
+
 void umDfsMarkObjectsUnMark(GC_state s, objptr *opp) {
     umDfsMarkObjects(s, opp, UNMARK_MODE);
 }
@@ -99,11 +101,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
         if (p >= s->umheap.start &&
             p < (s->umheap.start + s->umheap.size)) {
             GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
-            if (m == MARK_MODE) {
-                pchunk->chunk_header |= UM_CHUNK_HEADER_MASK;
-            } else {
-                pchunk->chunk_header &= ~UM_CHUNK_HEADER_MASK;
-            }
+            pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
             if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
@@ -113,11 +111,8 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             }
 
             if (NULL != pchunk->next_chunk) {
-                if (m == MARK_MODE) {
-                    pchunk->next_chunk->chunk_header |= UM_CHUNK_HEADER_MASK;
-                } else {
-                    pchunk->next_chunk->chunk_header &= ~UM_CHUNK_HEADER_MASK;
-                }
+                pchunk->next_chunk->object_version = MAX_VERSION(s->gc_object_version,
+                                                                 pchunk->next_chunk->object_version);
             }
         }
     }
@@ -125,12 +120,9 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
         p < s->tlsfarheap.size + s->tlsfarheap.start) {
         GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
-        //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
-        if (m == MARK_MODE) {
-            arrayHeader->array_header |= UM_CHUNK_HEADER_MASK;
-        } else {
-            arrayHeader->array_header &= ~UM_CHUNK_HEADER_MASK;
-        }
+        // fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
+        arrayHeader->object_version = MAX_VERSION(s->gc_object_version,
+                                                  arrayHeader->object_version);
     }
 
     if (numObjptrs > 0) {

@@ -28,6 +28,7 @@ pointer GC_arrayAllocate(GC_state s,
     arrayHeader->array_ml_header = header;
     arrayHeader->array_header = 0;
     arrayHeader->array_length = numElements;
+    arrayHeader->object_version = s->object_alloc_version;
     pointer frontier = array + sizeof(struct GC_TLSF_array);
     pointer last = frontier + arraySize;
 

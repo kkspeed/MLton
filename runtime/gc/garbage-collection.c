@@ -131,10 +131,10 @@ void performUMGC(GC_state s,
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
-            if (DEBUG_MEM) {
+            //            if (DEBUG_MEM) {
                 fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
                         (uintptr_t)pc, pc->sentinel, pc->object_version);
-            }
+                //            }
             insertFreeChunk(s, &(s->umheap), pchunk);
         }
 
@@ -147,6 +147,7 @@ void performUMGC(GC_state s,
     while (current->next) {
         if (current->next->object_version < s->gc_object_version) {
             pthread_mutex_lock(&(s->array_mutex));
+            fprintf(stderr, "Collecting array, haha!\n");
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
@@ -361,7 +362,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
             s->root_set_size = 0;
             enter(s);
-            getThreadCurrent(s)->bytesNeeded = bytesRequested;
+            //            getThreadCurrent(s)->bytesNeeded = bytesRequested;
             switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
             GC_stack currentStack = getStackCurrent(s);
             foreachGlobalObjptr(s, collectRootSet);

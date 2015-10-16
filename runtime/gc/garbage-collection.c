@@ -8,7 +8,7 @@
  */
 
 void minorGC (GC_state s) {
-    minorCheneyCopyGC (s);
+    //    minorCheneyCopyGC (s);
 }
 
 __attribute__ ((unused)) void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {

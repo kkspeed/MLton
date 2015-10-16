@@ -101,6 +101,7 @@ void gc_thread_func(void* _gc_stat)
           s->gc_work = 0;
       }
       pthread_mutex_unlock(&(s->gc_stat_mutex));
+      pthread_yield();
   }
 }
 

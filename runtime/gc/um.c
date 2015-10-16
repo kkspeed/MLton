@@ -37,6 +37,7 @@ UM_Header_alloc(GC_state gc_stat,
 Pointer
 UM_Object_alloc(GC_state gc_stat, C_Size_t num_chunks, uint32_t header, C_Size_t s)
 {
+    pthread_mutex_lock(&(gc_stat->object_mutex));
     GC_UM_Chunk chunk = allocNextChunk(gc_stat, &(gc_stat->umheap));
     chunk->chunk_header = UM_CHUNK_IN_USE;
     *((uint32_t*) chunk->ml_object) = header;
@@ -44,6 +45,7 @@ UM_Object_alloc(GC_state gc_stat, C_Size_t num_chunks, uint32_t header, C_Size_t
         chunk->next_chunk = allocNextChunk(gc_stat, &(gc_stat->umheap));
         chunk->next_chunk->chunk_header = UM_CHUNK_IN_USE;
     }
+    pthread_mutex_unlock(&(gc_stat->object_mutex));
     return (Pointer)(chunk->ml_object + s);
 }
 

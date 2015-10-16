@@ -109,9 +109,10 @@ void performUMGC(GC_state s,
 
 #ifdef PROFILE_UMGC
     long t_start = getCurrentTime();
-    fprintf(stderr, "[GC] Free chunk: %d, Free array chunk: %d\n",
+    fprintf(stderr, "[GC] Free chunk: %d, Obj Version: %lld, GC Version: %lld\n",
             s->fl_chunks,
-            s->fl_array_chunks);
+            s->object_alloc_version,
+            s->gc_object_version);
 #endif
 
     for (int i=0; i<s->root_set_size; i++) {
@@ -147,7 +148,7 @@ void performUMGC(GC_state s,
     while (current->next) {
         if (current->next->object_version < s->gc_object_version) {
             pthread_mutex_lock(&(s->array_mutex));
-            fprintf(stderr, "Collecting array, haha!\n");
+            //            fprintf(stderr, "Collecting array, haha!\n");
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
@@ -166,16 +167,18 @@ void performUMGC(GC_state s,
     //    fprintf(stderr, "GC returend!\n");
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
-    s->root_set_size = 0;
-    s->gc_object_version = s->object_alloc_version;
+    //    s->root_set_size = 0;
+
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
     fprintf(stderr, "[GC] Time: %ld, Free chunk: %d, Free array chunk: %d, "
-            "ensureArrayChunk: %d\n",
+            "ensureArrayChunk: %d, GC version: %lld, object_alloc_version: %lld\n",
             t_end - t_start,
             s->fl_chunks,
             s->fl_array_chunks,
-            ensureArrayChunksAvailable);
+            ensureArrayChunksAvailable,
+            s->gc_object_version,
+            s->object_alloc_version);
 #endif
 
 }
@@ -320,18 +323,19 @@ void ensureHasHeapBytesFree (GC_state s,
 
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
   fprintf(stderr, "Collecting!\n");
-  enter (s);
-  /* When the mutator requests zero bytes, it may actually need as
-   * much as GC_HEAP_LIMIT_SLOP.
-   */
-  if (0 == bytesRequested)
-    bytesRequested = GC_HEAP_LIMIT_SLOP;
-  getThreadCurrent(s)->bytesNeeded = bytesRequested;
-  switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-  ensureInvariantForMutator (s, force);
-  assert (invariantForMutatorFrontier(s));
-  assert (invariantForMutatorStack(s));
-  leave (s);
+  performUMGC(s, 0, 0, true);
+  /* enter (s); */
+  /* /\* When the mutator requests zero bytes, it may actually need as */
+  /*  * much as GC_HEAP_LIMIT_SLOP. */
+  /*  *\/ */
+  /* if (0 == bytesRequested) */
+  /*   bytesRequested = GC_HEAP_LIMIT_SLOP; */
+  /* getThreadCurrent(s)->bytesNeeded = bytesRequested; */
+  /* switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s); */
+  /* ensureInvariantForMutator (s, force); */
+  /* assert (invariantForMutatorFrontier(s)); */
+  /* assert (invariantForMutatorStack(s)); */
+  /* leave (s); */
   if (DEBUG_MEM) {
       fprintf(stderr, "GC_collect done\n");
   }
@@ -355,15 +359,15 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     /* fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version, */
     /*         s->gc_object_version); */
 
-
     if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
         if (s->gc_work == 0) {
+            s->gc_object_version = s->object_alloc_version;
             s->object_alloc_version++;
-
+            fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
             enter(s);
-            //            getThreadCurrent(s)->bytesNeeded = bytesRequested;
-            switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
+            getThreadCurrent(s)->bytesNeeded = bytesRequested;
+            //            switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
             GC_stack currentStack = getStackCurrent(s);
             foreachGlobalObjptr(s, collectRootSet);
             foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
@@ -373,6 +377,8 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->gc_work = 1;
         }
         pthread_mutex_unlock(&s->gc_stat_mutex);
+        pthread_yield();
+        //performUMGC(s, 0, 0, true);
     }
         //GC_collect_real(s, 0, true);
         //        sleep(1);

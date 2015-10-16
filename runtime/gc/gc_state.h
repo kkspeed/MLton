@@ -85,8 +85,8 @@ struct GC_state {
   pointer infFrontier;
   objptr* root_sets;
   uint32_t root_set_size;
-  volatile uint64_t gc_object_version;
-  volatile uint64_t object_alloc_version;
+  uint64_t gc_object_version;
+  uint64_t object_alloc_version;
   int gc_work;
   pthread_mutex_t object_mutex;
   pthread_mutex_t array_mutex;

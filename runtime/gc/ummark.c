@@ -66,7 +66,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
-        if (DEBUG_MEM)
+        //        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR"marked by mark_mode: %d, RETURN\n",
                     (uintptr_t)p,
                     (m == MARK_MODE));
@@ -74,7 +74,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     }
 
     if (m == MARK_MODE) {
-        if (DEBUG_MEM)
+        //        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR" mark b pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
 
@@ -85,7 +85,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             fprintf(stderr, FMTPTR" mark a pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
     } else {
-        if (DEBUG_MEM)
+        //        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR" unmark b pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
 

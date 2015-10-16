@@ -16,8 +16,6 @@ void initUMArrayHeap(GC_state s,
 
 GC_UM_Chunk allocNextChunk(GC_state s,
                            GC_UM_heap h) {
-
-    pthread_mutex_lock(&(s->object_mutex));
     if (s->fl_chunks <= 3) {
 //        GC_collect(s, 0, true);
         die("allocNextChunk: No more memory available\n");
@@ -29,8 +27,7 @@ GC_UM_Chunk allocNextChunk(GC_state s,
     c->chunk_header = UM_CHUNK_HEADER_CLEAN;
     s->fl_chunks -= 1;
     c->object_version = s->object_alloc_version;
-    asm ("" ::: "memory");
-    pthread_mutex_unlock(&(s->object_mutex));
+
     return c;
 }
 

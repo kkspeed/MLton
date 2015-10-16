@@ -188,6 +188,7 @@ void performGC (GC_state s,
                 size_t nurseryBytesRequested,
                 bool forceMajor,
                 __attribute__ ((unused)) bool mayResize) {
+  return;
   uintmax_t gcTime;
   bool stackTopOk;
   size_t stackBytesRequested;
@@ -345,17 +346,17 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            enter(s);
             GC_stack currentStack = getStackCurrent(s);
             foreachGlobalObjptr(s, collectRootSet);
             foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
-            leave(s);
 
             fprintf(stderr, "Got root set, size: %d, at GC version: %lld, "
                     "object version: %lld!\n", s->root_set_size, s->gc_object_version,
                     s->object_alloc_version);
             s->gc_work = 1;
         }
+        //        s->gc_work = 0;
+        //        GC_collect_real(s, 0, true);
         pthread_mutex_unlock(&s->gc_stat_mutex);
         pthread_yield();
         //        performUMGC(s, 0, 0, true);

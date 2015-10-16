@@ -185,7 +185,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     assert (STACK_TAG == tag);
     stack = (GC_stack)p;
     bottom = getStackBottom (s, stack);
-    top = getStackTop (s, stack);
+    top = s->stackTop;/* getStackTop (s, stack); */
     if (DEBUG) {
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);

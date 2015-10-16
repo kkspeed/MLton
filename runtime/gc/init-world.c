@@ -97,11 +97,11 @@ void gc_thread_func(void* _gc_stat)
   while (true) {
       pthread_mutex_lock(&(s->gc_stat_mutex));
       if (s->gc_work == 1) {
-          GC_collect_real(s, 0, true);
+          performUMGC(s, 0, 0, true);
+          //          GC_collect_real(s, 0, true);
           s->gc_work = 0;
       }
       pthread_mutex_unlock(&(s->gc_stat_mutex));
-      pthread_yield();
   }
 }
 
@@ -164,9 +164,9 @@ void initWorld (GC_state s) {
 
   s->gc_work = 0;
 
-  //  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
+  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
 
-  //  sleep(1);
+  sleep(1);
 
   if (DEBUG_MEM) {
       fprintf(stderr, "UMFrontier start: "FMTPTR"\n", (uintptr_t)(s->umfrontier));

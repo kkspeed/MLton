@@ -190,7 +190,6 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);
     }
-    assert (stack->used <= stack->reserved);
     while (top > bottom) {
       /* Invariant: top points just past a "return address". */
       returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));

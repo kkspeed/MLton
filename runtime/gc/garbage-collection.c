@@ -116,9 +116,9 @@ void performUMGC(GC_state s,
 #endif
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
-        pointer p = (s->root_sets[i]);
-        foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
-        //        umDfsMarkObjectsMark(s, &(s->root_sets[i]));
+        //        pointer p = (s->root_sets[i]);
+        //        foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
+        umDfsMarkObjectsMark(s, &(s->root_sets[i]));
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
@@ -160,8 +160,8 @@ void performUMGC(GC_state s,
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
         pointer p = (s->root_sets[i]);
-        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
-        //umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
+        //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
+        umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
     }
 
     //    fprintf(stderr, "GC returend!\n");
@@ -324,18 +324,6 @@ void ensureHasHeapBytesFree (GC_state s,
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
   fprintf(stderr, "Collecting!\n");
   performUMGC(s, 0, 0, true);
-  /* enter (s); */
-  /* /\* When the mutator requests zero bytes, it may actually need as */
-  /*  * much as GC_HEAP_LIMIT_SLOP. */
-  /*  *\/ */
-  /* if (0 == bytesRequested) */
-  /*   bytesRequested = GC_HEAP_LIMIT_SLOP; */
-  /* getThreadCurrent(s)->bytesNeeded = bytesRequested; */
-  /* switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s); */
-  /* ensureInvariantForMutator (s, force); */
-  /* assert (invariantForMutatorFrontier(s)); */
-  /* assert (invariantForMutatorStack(s)); */
-  /* leave (s); */
   if (DEBUG_MEM) {
       fprintf(stderr, "GC_collect done\n");
   }
@@ -347,14 +335,14 @@ void collectRootSet(GC_state s, objptr* opp)
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
-    //    if (!force) {
-        if (s->fl_chunks > 200)
-            return;
-        ///    }
+    /* if (!force) { */
+    /*     if (s->fl_chunks > 200) */
+    /*         return; */
+    /* } */
 
-    s->object_alloc_version++;
-    //    if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
-        //        if (s->gc_work == 0) {
+    if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
+        if (s->gc_work == 0) {
+            s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
             enter(s);
@@ -367,9 +355,9 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
                     "object version: %lld!\n", s->root_set_size, s->gc_object_version,
                     s->object_alloc_version);
             s->gc_work = 1;
-            //        }
-            //        pthread_mutex_unlock(&s->gc_stat_mutex);
-        //        pthread_yield();
-        performUMGC(s, 0, 0, true);
-        //    }
+        }
+        pthread_mutex_unlock(&s->gc_stat_mutex);
+        pthread_yield();
+        //        performUMGC(s, 0, 0, true);
+    }
 }

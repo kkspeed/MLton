@@ -228,7 +228,7 @@ val objChunkSize : unit -> Bytes.t =
 (* See gc/heap.h. *)
 val limitSlop = Bytes.fromInt 512
 
-val objChunkSlop = Word.fromInt 500
+val objChunkSlop = Word.fromInt 20000000
 
 (* See gc/frame.h. *)
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))

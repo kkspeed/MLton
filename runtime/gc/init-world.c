@@ -164,7 +164,7 @@ void initWorld (GC_state s) {
 
   s->gc_work = 0;
 
-  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
+  //  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
 
   sleep(1);
 

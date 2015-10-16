@@ -120,14 +120,16 @@ UM_CPointer_offset(GC_state gc_stat, Pointer p, C_Size_t o, C_Size_t s)
     /* Not on our heap! */
     if (p < (gc_stat->umheap).start ||
         p >= heap_end) {
-        //        if (DEBUG_MEM)
+        if (DEBUG_MEM)
             DBG(p, o, s, "not UM Heap");
             return (p + o);
     }
 
     GC_UM_Chunk current_chunk = (GC_UM_Chunk) (p - 4);
-    if (current_chunk->chunk_header == UM_CHUNK_HEADER_CLEAN)
+    if (current_chunk->chunk_header == UM_CHUNK_HEADER_CLEAN) {
+        fprintf(stderr, "A chunk on freelist: 0x%x, -4: 0x%x\n", p, current_chunk);
         die("Visiting a chunk that is on free list!\n");
+    }
 
     /* On current chunk */
     /* TODO: currently 4 is hard-coded mlton's header size */

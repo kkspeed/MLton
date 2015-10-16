@@ -132,10 +132,10 @@ void performUMGC(GC_state s,
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
-            //            if (DEBUG_MEM) {
+            if (DEBUG_MEM) {
                 fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
                         (uintptr_t)pc, pc->sentinel, pc->object_version);
-                //            }
+            }
             insertFreeChunk(s, &(s->umheap), pchunk);
         }
 
@@ -168,7 +168,7 @@ void performUMGC(GC_state s,
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
     //    s->root_set_size = 0;
-
+    s->gc_object_version = s->object_alloc_version;
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
     fprintf(stderr, "[GC] Time: %ld, Free chunk: %d, Free array chunk: %d, "
@@ -347,10 +347,10 @@ void collectRootSet(GC_state s, objptr* opp)
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
-    /* if (!force) { */
-    /*     if (s->fl_chunks > 200) */
-    /*         return; */
-    /* } */
+    if (!force) {
+        if (s->fl_chunks > 200)
+            return;
+    }
 
     /* if (s->gc_module == GC_NONE) { */
     /*     return; */
@@ -361,7 +361,6 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
     if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
         if (s->gc_work == 0) {
-            s->gc_object_version = s->object_alloc_version;
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
@@ -373,12 +372,14 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
             leave(s);
 
-            fprintf(stderr, "Got root set, size: %d!\n", s->root_set_size);
+            fprintf(stderr, "Got root set, size: %d, at GC version: %lld, "
+                    "object version: %lld!\n", s->root_set_size, s->gc_object_version,
+                    s->object_alloc_version);
             s->gc_work = 1;
         }
         pthread_mutex_unlock(&s->gc_stat_mutex);
-        pthread_yield();
-        //performUMGC(s, 0, 0, true);
+        //        pthread_yield();
+        performUMGC(s, 0, 0, true);
     }
         //GC_collect_real(s, 0, true);
         //        sleep(1);

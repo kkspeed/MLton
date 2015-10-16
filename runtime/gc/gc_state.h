@@ -85,6 +85,8 @@ struct GC_state {
   pointer infFrontier;
   uint64_t gc_object_version;
   uint64_t object_alloc_version;
+  Objptr* rootSet;
+  uint32_t rootSetSize;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

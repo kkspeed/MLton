@@ -114,9 +114,9 @@ void performUMGC(GC_state s,
             s->fl_array_chunks);
 #endif
 
-    GC_stack currentStack = getStackCurrent(s);
-    foreachGlobalObjptr (s, umDfsMarkObjectsMark);
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
+    for (uint32_t i=0; i<s->rootSetSize; i++) {
+        umDfsMarkObjectsMark(s, &(s->rootSet[i]));
+    }
 
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
@@ -153,10 +153,10 @@ void performUMGC(GC_state s,
         }
     }
 
+    for (uint32_t i=0; i<s->rootSetSize; i++) {
+        umDfsMarkObjectsUnMark(s, &(s->rootSet[i]));
+    }
     //    fprintf(stderr, "GC returend!\n");
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
-    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
-
     s->gc_object_version = s->object_alloc_version;
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
@@ -309,22 +309,15 @@ void ensureHasHeapBytesFree (GC_state s,
 }
 
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
-  enter (s);
-  /* When the mutator requests zero bytes, it may actually need as
-   * much as GC_HEAP_LIMIT_SLOP.
-   */
-  if (0 == bytesRequested)
-    bytesRequested = GC_HEAP_LIMIT_SLOP;
-  getThreadCurrent(s)->bytesNeeded = bytesRequested;
-  switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
   ensureInvariantForMutator (s, force);
-  assert (invariantForMutatorFrontier(s));
-  assert (invariantForMutatorStack(s));
-  leave (s);
-
   if (DEBUG_MEM) {
       fprintf(stderr, "GC_collect done\n");
   }
+}
+
+void GC_collect_rootset(GC_state s, Objptr* opp)
+{
+    s->rootSet[s->rootSetSize++] = *opp;
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
@@ -337,9 +330,21 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
         return;
     }
 
-    fprintf(stderr, "Obj version: %lld, GC version: %lld\n", s->object_alloc_version,
+    fprintf(stderr, "Obj version: %lld, GC version: %lld\n",
+            s->object_alloc_version,
             s->gc_object_version);
     s->object_alloc_version++;
 
-    GC_collect_real(s, bytesRequested, true);
+    s->rootSetSize = 0;
+    enter (s);
+    getThreadCurrent(s)->bytesNeeded = bytesRequested;
+    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
+    GC_stack currentStack = getStackCurrent(s);
+    foreachGlobalObjptr (s, GC_collect_rootset);
+    foreachObjptrInObject(s, (pointer) currentStack, GC_collect_rootset, FALSE);
+    //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
+    //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
+    //    GC_collect_real(s, bytesRequested, true);
+    leave (s);
+    performUMGC(s, 0, 0, true);
 }

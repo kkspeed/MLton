@@ -128,6 +128,8 @@ void initWorld (GC_state s) {
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   s->object_alloc_version = 0;
   s->gc_object_version = 0;
+  s->rootSet = (Objptr*)malloc(sizeof(Objptr) * 1024);
+  s->rootSetSize = 0;
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
@@ -137,6 +139,7 @@ void initWorld (GC_state s) {
   next_chunk = allocNextChunk(s, &(s->umheap));
   next_chunk->next_chunk = NULL;
   s->umfrontier = (Pointer) next_chunk->ml_object;
+
 
 
   thread = newThread (s, sizeofStackInitialReserved (s));

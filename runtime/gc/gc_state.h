@@ -43,7 +43,6 @@ struct GC_state {
   struct GC_controls controls;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
-  struct GC_forwardState forwardState;
   GC_frameLayout frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   struct GC_generationalMaps generationalMaps;
@@ -60,7 +59,6 @@ struct GC_state {
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
-  GC_objectHashTable objectHashTable;
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;

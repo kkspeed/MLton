@@ -27,42 +27,10 @@ void GC_switchToThread (GC_state s, pointer p, size_t ensureBytesFree) {
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_switchToThread ("FMTPTR", %"PRIuMAX")\n",
              (uintptr_t)p, (uintmax_t)ensureBytesFree);
-  if (FALSE) {
-    /* This branch is slower than the else branch, especially
-     * when debugging is turned on, because it does an invariant
-     * check on every thread switch.
-     * So, we'll stick with the else branch for now.
-     */
-    enter (s);
-    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr(p, s->heap.start));
-    s->atomicState--;
-    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-    ensureInvariantForMutator (s, FALSE);
-    assert (invariantForMutatorFrontier(s));
-    assert (invariantForMutatorStack(s));
-    leave (s);
-  } else {
     /* BEGIN: enter(s); */
-    getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
-    getThreadCurrent(s)->exnStack = s->exnStack;
-    beginAtomic (s);
-    /* END: enter(s); */
-    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr(p, s->heap.start));
-    s->atomicState--;
-    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-    /* BEGIN: ensureInvariantForMutator */
-    if (not (invariantForMutatorFrontier(s))
-        or not (invariantForMutatorStack(s))) {
-      /* This GC will grow the stack, if necessary. */
-      performGC (s, 0, getThreadCurrent(s)->bytesNeeded, FALSE, TRUE);
-    }
-    /* END: ensureInvariantForMutator */
-    /* BEGIN: leave(s); */
-    endAtomic (s);
-    /* END: leave(s); */
-  }
-  assert (invariantForMutatorFrontier(s));
-  assert (invariantForMutatorStack(s));
+  getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+  getThreadCurrent(s)->exnStack = s->exnStack;
+  getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
+  switchToThread (s, pointerToObjptr(p, s->heap.start));
+  switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
 }

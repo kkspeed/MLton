@@ -8,6 +8,22 @@ void umDfsMarkObjectsMark(GC_state s, objptr *opp) {
     umDfsMarkObjects(s, opp, MARK_MODE);
 }
 
+bool isPointerMarked (pointer p) {
+  return MARK_MASK & getHeader (p);
+}
+
+bool isPointerMarkedByMode (pointer p, GC_markMode m) {
+  switch (m) {
+  case MARK_MODE:
+    return isPointerMarked (p);
+  case UNMARK_MODE:
+    return not isPointerMarked (p);
+  default:
+    die ("bad mark mode %u", m);
+  }
+}
+
+
 void getObjectType(GC_state s, objptr *opp) {
     pointer p = objptrToPointer(*opp, s->heap.start);
     GC_header* headerp = getHeaderp(p);

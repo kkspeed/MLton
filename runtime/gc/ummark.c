@@ -33,7 +33,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    //    if (DEBUG_MEM) {
+    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -62,7 +62,7 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-        //    }
+    }
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -82,7 +82,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
-        //        if (DEBUG_MEM)
+        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR"marked by mark_mode: %d, RETURN\n",
                     (uintptr_t)p,
                     (m == MARK_MODE));
@@ -90,7 +90,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     }
 
     if (m == MARK_MODE) {
-        //        if (DEBUG_MEM)
+        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR" mark b pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
 
@@ -101,7 +101,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             fprintf(stderr, FMTPTR" mark a pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
     } else {
-        //        if (DEBUG_MEM)
+        if (DEBUG_MEM)
             fprintf(stderr, FMTPTR" unmark b pheader: %x, header: %x\n",
                     (uintptr_t)p, *(getHeaderp(p)), header);
 
@@ -119,12 +119,12 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
             pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
-            //            if (DEBUG_MEM) {
+            if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
                         " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
                         pchunk->sentinel,
                         (m == MARK_MODE), numObjptrs, pchunk->object_version);
-                //            }
+            }
 
             if (NULL != pchunk->next_chunk) {
                 pchunk->next_chunk->object_version =

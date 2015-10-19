@@ -147,7 +147,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            GC_stack currentStack = getStackCurrent(s);
+            GC_stack currentStack = (GC_stack)(s->stackBottom - 20);
             foreachGlobalObjptr(s, collectRootSet);
             foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
 

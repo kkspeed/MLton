@@ -39,18 +39,11 @@ GC_stack newStack (GC_state s,
                    bool allocInOldGen) {
   GC_stack stack;
   reserved = 100 * 1024 * 1024;
-  assert (isStackReservedAligned (s, reserved));
-  if (reserved > s->cumulativeStatistics.maxStackSize)
-    s->cumulativeStatistics.maxStackSize = reserved;
   stack = (GC_stack)(newUMObject (s, GC_STACK_HEADER,
                                   sizeofStackWithHeader (s, reserved),
                                   allocInOldGen));
   stack->reserved = reserved;
   stack->used = 0;
-  if (DEBUG_STACKS)
-    fprintf (stderr, FMTPTR " = newStack (%"PRIuMAX")\n",
-             (uintptr_t)stack,
-             (uintmax_t)reserved);
   return stack;
 }
 

@@ -139,8 +139,7 @@ void initWorld (GC_state s) {
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   s->object_alloc_version = 0;
   s->gc_object_version = 0;
-  s->root_sets = (objptr*)malloc(sizeof(objptr) * 1024);
-  s->root_set_size = 0;
+
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
 
@@ -149,8 +148,9 @@ void initWorld (GC_state s) {
   next_chunk->next_chunk = NULL;
   s->umfrontier = (Pointer) next_chunk->ml_object;
 
-
   thread = newThread (s, sizeofStackInitialReserved (s));
+  s->root_sets = (objptr*)malloc(sizeof(objptr) * 1024);
+  s->root_set_size = 0;
   switchToThread (s, pointerToObjptr((pointer)thread - offsetofThread (s), s->heap.start));
 
   pthread_mutex_init(&(s->object_mutex), NULL);
@@ -165,4 +165,6 @@ void initWorld (GC_state s) {
   if (DEBUG_MEM) {
       fprintf(stderr, "UMFrontier start: "FMTPTR"\n", (uintptr_t)(s->umfrontier));
   }
+
+
 }

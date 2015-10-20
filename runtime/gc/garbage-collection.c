@@ -132,8 +132,7 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void collectRootSet(GC_state s, objptr* opp)
 {
-    if (isObjptr(*opp))
-        s->root_sets[s->root_set_size++] = *opp;
+    s->root_sets[s->root_set_size++] = *opp;
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
@@ -147,9 +146,22 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            GC_stack currentStack = (GC_stack)(s->stackBottom - 20);
             foreachGlobalObjptr(s, collectRootSet);
-            foreachObjptrInObject(s, (pointer) currentStack, collectRootSet, FALSE);
+
+            pointer top = s->stackTop;
+            pointer bottom = s->stackBottom;
+            unsigned int i;
+            GC_returnAddress returnAddress;
+            GC_frameLayout frameLayout;
+            GC_frameOffsets frameOffsets;
+            returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
+            frameLayout = getFrameLayoutFromReturnAddress(s, returnAddress);
+            frameOffsets = frameLayout->offsets;
+            top -= frameLayout->size;
+            for (i = 0 ; i < frameOffsets[0] ; ++i) {
+                callIfIsObjptr (s, collectRootSet,
+                                (objptr*)(top + frameOffsets[i + 1]));
+            }
 
             fprintf(stderr, "Got root set, size: %d, at GC version: %lld, "
                     "object version: %lld!\n", s->root_set_size, s->gc_object_version,

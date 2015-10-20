@@ -336,15 +336,27 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     s->object_alloc_version++;
 
     s->rootSetSize = 0;
-    enter (s);
-    getThreadCurrent(s)->bytesNeeded = bytesRequested;
-    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-    GC_stack currentStack = getStackCurrent(s);
+
     foreachGlobalObjptr (s, GC_collect_rootset);
-    foreachObjptrInObject(s, (pointer) currentStack, GC_collect_rootset, FALSE);
+    pointer top = s->stackTop;
+    pointer bottom = s->stackBottom;
+    GC_frameLayout frameLayout;
+    GC_frameOffsets frameOffsets;
+    GC_returnAddress returnAddress;
+
+    while (top > bottom) {
+        returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
+        frameLayout = getFrameLayoutFromReturnAddress(s, returnAddress);
+        frameOffsets = frameLayout->offsets;
+        top -= frameLayout->size;
+        for (unsigned int i=0; i<frameOffsets[0]; ++i) {
+          callIfIsObjptr(s, GC_collect_rootset, (objptr*)(top + frameOffsets[i + 1]));
+        }
+    }
+
+    //    foreachObjptrInObject(s, (pointer) currentStack, GC_collect_rootset, FALSE);
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
     //    GC_collect_real(s, bytesRequested, true);
-    leave (s);
     performUMGC(s, 0, 0, true);
 }

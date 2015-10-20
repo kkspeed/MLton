@@ -35,7 +35,7 @@ EXE :=
 
 # These flags can be overridden by the user
 CPPFLAGS :=
-CFLAGS := -O2
+CFLAGS := -g
 
 WARNXCFLAGS :=
 WARNXCFLAGS += -pedantic -Wall

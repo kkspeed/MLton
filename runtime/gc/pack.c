@@ -12,7 +12,7 @@ void GC_pack (GC_state s) {
 
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Packing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
@@ -30,7 +30,7 @@ void GC_pack (GC_state s) {
   }
   releaseHeap (s, &s->secondaryHeap);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Packed heap at "FMTPTR" to size %s bytes.]\n",
              (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
@@ -40,8 +40,8 @@ void GC_pack (GC_state s) {
 void GC_unpack (GC_state s) {
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, 
-             "[GC: Unpacking heap at "FMTPTR" of size %s bytes.]\n", 
+    fprintf (stderr,
+             "[GC: Unpacking heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   /* The enterGC is needed here because minorGC and resizeHeap might
@@ -57,7 +57,7 @@ void GC_unpack (GC_state s) {
   setGCStateCurrentThreadAndStack (s);
   leaveGC (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Unpacked heap at "FMTPTR" to size %s bytes.]\n",
              (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));

@@ -8,7 +8,7 @@
 
 bool isPointerInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
-          or (s->heap.start <= p 
+          or (s->heap.start <= p
               and p < s->heap.start + s->heap.oldGenSize));
 }
 
@@ -37,7 +37,7 @@ bool isObjptrInNursery (GC_state s, objptr op) {
 
 #if ASSERT
 bool isObjptrInFromSpace (GC_state s, objptr op) {
-  return (isObjptrInOldGen (s, op) 
+  return (isObjptrInOldGen (s, op)
           or isObjptrInNursery (s, op));
 }
 #endif
@@ -47,10 +47,10 @@ bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery) {
   bool res;
 
   total =
-    s->heap.oldGenSize + oldGen 
+    s->heap.oldGenSize + oldGen
     + (s->canMinor ? 2 : 1) * (size_t)(s->limitPlusSlop - s->heap.nursery);
-  res = 
-    (total <= s->heap.size) 
+  res =
+    (total <= s->heap.size)
     and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));
   if (DEBUG_DETAILED)
     fprintf (stderr, "%s = hasBytesFree (%s, %s)\n",

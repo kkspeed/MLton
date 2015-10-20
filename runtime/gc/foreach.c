@@ -124,7 +124,6 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     pointer last;
     GC_arrayLength numElements;
 
-    fprintf(stderr, "HERE\n");
     numElements = getArrayLength (p);
     bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
     dataBytes = numElements * bytesPerElement;
@@ -186,12 +185,11 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     assert (STACK_TAG == tag);
     stack = (GC_stack)p;
     bottom = getStackBottom (s, stack);
-    top = getStackTop (s, stack);
+    top = s->stackTop;/* getStackTop (s, stack); */
     if (DEBUG) {
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);
     }
-    assert (stack->used <= stack->reserved);
     while (top > bottom) {
       /* Invariant: top points just past a "return address". */
       returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));

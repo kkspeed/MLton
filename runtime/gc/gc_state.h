@@ -43,7 +43,6 @@ struct GC_state {
   struct GC_controls controls;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
-  struct GC_forwardState forwardState;
   GC_frameLayout frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   struct GC_generationalMaps generationalMaps;
@@ -60,7 +59,6 @@ struct GC_state {
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
-  GC_objectHashTable objectHashTable;
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
@@ -83,8 +81,15 @@ struct GC_state {
   GC_moduleKind gc_module;
   struct GC_heap infHeap;
   pointer infFrontier;
+  objptr* root_sets;
+  uint32_t root_set_size;
   uint64_t gc_object_version;
   uint64_t object_alloc_version;
+  int gc_work;
+  pthread_mutex_t object_mutex;
+  pthread_mutex_t array_mutex;
+  pthread_mutex_t gc_stat_mutex;
+  pthread_t gc_thread;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

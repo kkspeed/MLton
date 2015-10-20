@@ -37,6 +37,7 @@ UM_Header_alloc(GC_state gc_stat,
 Pointer
 UM_Object_alloc(GC_state gc_stat, C_Size_t num_chunks, uint32_t header, C_Size_t s)
 {
+    pthread_mutex_lock(&(gc_stat->object_mutex));
     GC_UM_Chunk chunk = allocNextChunk(gc_stat, &(gc_stat->umheap));
     chunk->chunk_header = UM_CHUNK_IN_USE;
     *((uint32_t*) chunk->ml_object) = header;
@@ -44,6 +45,7 @@ UM_Object_alloc(GC_state gc_stat, C_Size_t num_chunks, uint32_t header, C_Size_t
         chunk->next_chunk = allocNextChunk(gc_stat, &(gc_stat->umheap));
         chunk->next_chunk->chunk_header = UM_CHUNK_IN_USE;
     }
+    pthread_mutex_unlock(&(gc_stat->object_mutex));
     return (Pointer)(chunk->ml_object + s);
 }
 
@@ -124,8 +126,10 @@ UM_CPointer_offset(GC_state gc_stat, Pointer p, C_Size_t o, C_Size_t s)
     }
 
     GC_UM_Chunk current_chunk = (GC_UM_Chunk) (p - 4);
-    if (current_chunk->chunk_header == UM_CHUNK_HEADER_CLEAN)
+    if (current_chunk->chunk_header == UM_CHUNK_HEADER_CLEAN) {
+        fprintf(stderr, "A chunk on freelist: 0x%x, -4: 0x%x\n", p, current_chunk);
         die("Visiting a chunk that is on free list!\n");
+    }
 
     /* On current chunk */
     /* TODO: currently 4 is hard-coded mlton's header size */

@@ -12,8 +12,11 @@ pointer GC_arrayAllocate(GC_state s,
     size_t arraySize = bytesPerElement * numElements;
     size_t allocSize = sizeof(struct GC_TLSF_array) + arraySize;
 
+    pthread_mutex_lock(&(s->array_mutex));
     pointer array = (pointer) tlsf_malloc(allocSize);
 
+
+    /* Array criteria needs to be addressed */
     if (!array) {
         GC_collect(s, 0, true);
         fprintf(stderr, "Cannot allocate array, GC!\n");
@@ -21,14 +24,20 @@ pointer GC_arrayAllocate(GC_state s,
     }
 
     GC_TLSF_array arrayHeader = (GC_TLSF_array) array;
+    arrayHeader->object_version = s->object_alloc_version;
     arrayHeader->magic = 9933;
+
+    asm volatile("" ::: "memory");
+
     arrayHeader->next = s->tlsfarheap.allocatedArray->next;
+
     s->tlsfarheap.allocatedArray->next = arrayHeader;
 
     arrayHeader->array_ml_header = header;
     arrayHeader->array_header = 0;
     arrayHeader->array_length = numElements;
-    arrayHeader->object_version = s->object_alloc_version;
+
+    pthread_mutex_unlock(&(s->array_mutex));
     pointer frontier = array + sizeof(struct GC_TLSF_array);
     pointer last = frontier + arraySize;
 

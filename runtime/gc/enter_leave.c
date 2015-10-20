@@ -17,7 +17,7 @@ void enter (GC_state s) {
   /* used needs to be set because the mutator has changed s->stackTop. */
   getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
   getThreadCurrent(s)->exnStack = s->exnStack;
-  if (DEBUG) 
+  if (DEBUG)
     displayGCState (s, stderr);
   beginAtomic (s);
   assert (invariantForGC (s));

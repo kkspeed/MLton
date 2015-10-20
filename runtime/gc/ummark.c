@@ -8,6 +8,22 @@ void umDfsMarkObjectsMark(GC_state s, objptr *opp) {
     umDfsMarkObjects(s, opp, MARK_MODE);
 }
 
+bool isPointerMarked (pointer p) {
+  return MARK_MASK & getHeader (p);
+}
+
+bool isPointerMarkedByMode (pointer p, GC_markMode m) {
+  switch (m) {
+  case MARK_MODE:
+    return isPointerMarked (p);
+  case UNMARK_MODE:
+    return not isPointerMarked (p);
+  default:
+    die ("bad mark mode %u", m);
+  }
+}
+
+
 void getObjectType(GC_state s, objptr *opp) {
     pointer p = objptrToPointer(*opp, s->heap.start);
     GC_header* headerp = getHeaderp(p);
@@ -17,7 +33,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    //    if (DEBUG_MEM) {
+    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -46,7 +62,7 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-        //    }
+    }
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -105,14 +121,15 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
 
             if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
-                        " mark_mode: %d, objptrs: %d\n", (uintptr_t)pchunk,
+                        " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
                         pchunk->sentinel,
-                        (m == MARK_MODE), numObjptrs);
+                        (m == MARK_MODE), numObjptrs, pchunk->object_version);
             }
 
             if (NULL != pchunk->next_chunk) {
-                pchunk->next_chunk->object_version = MAX_VERSION(s->gc_object_version,
-                                                                 pchunk->next_chunk->object_version);
+                pchunk->next_chunk->object_version =
+                    MAX_VERSION(s->gc_object_version,
+                                pchunk->next_chunk->object_version);
             }
         }
     }
@@ -120,7 +137,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
         p < s->tlsfarheap.size + s->tlsfarheap.start) {
         GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
-        // fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
+        //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
         arrayHeader->object_version = MAX_VERSION(s->gc_object_version,
                                                   arrayHeader->object_version);
     }

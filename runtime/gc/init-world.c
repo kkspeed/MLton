@@ -91,6 +91,20 @@ void initVectors (GC_state s) {
   s->frontier = frontier;
 }
 
+void gc_thread_func(void* _gc_stat)
+{
+  GC_state s = (GC_state) _gc_stat;
+  while (true) {
+      pthread_mutex_lock(&(s->gc_stat_mutex));
+      if (s->gc_work == 1) {
+          performUMGC(s, 0, 0, true);
+          //          GC_collect_real(s, 0, true);
+          s->gc_work = 0;
+      }
+      pthread_mutex_unlock(&(s->gc_stat_mutex));
+  }
+}
+
 void initWorld (GC_state s) {
   uint32_t i;
   pointer start;
@@ -114,34 +128,43 @@ void initWorld (GC_state s) {
   createHeap (s, &s->heap, 100*MEGABYTES, 100*MEGABYTES);
 
   createHeap (s, &s->infHeap, 100*MEGABYTES, 100*MEGABYTES);
-//              sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
-//               s->lastMajorStatistics.bytesLive);
-//              sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
-//              s->lastMajorStatistics.bytesLive);
   s->gc_module = GC_UM;
-  setCardMapAndCrossMap (s);
+  fprintf(stderr, "Heap start: 0x%x\n", s->heap.start);
   start = alignFrontier (s, s->heap.start);
   s->umarfrontier = s->umarheap.start;
   s->frontier = start;
+  fprintf(stderr, "Frontier: 0x%x\n", s->frontier);
   s->infFrontier = s->infHeap.start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   s->object_alloc_version = 0;
   s->gc_object_version = 0;
+
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
-  s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
-  setGCStateCurrentHeap (s, 0, 0);
 
   GC_UM_Chunk next_chunk = NULL;
   next_chunk = allocNextChunk(s, &(s->umheap));
   next_chunk->next_chunk = NULL;
   s->umfrontier = (Pointer) next_chunk->ml_object;
 
-
   thread = newThread (s, sizeofStackInitialReserved (s));
+  s->root_sets = (objptr*)malloc(sizeof(objptr) * 1024);
+  s->root_set_size = 0;
   switchToThread (s, pointerToObjptr((pointer)thread - offsetofThread (s), s->heap.start));
+
+  pthread_mutex_init(&(s->object_mutex), NULL);
+  pthread_mutex_init(&(s->array_mutex), NULL);
+  pthread_mutex_init(&(s->gc_stat_mutex), NULL);
+
+  s->gc_work = 0;
+
+  //  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
+  //  sleep(1);
+
   if (DEBUG_MEM) {
       fprintf(stderr, "UMFrontier start: "FMTPTR"\n", (uintptr_t)(s->umfrontier));
   }
+
+
 }

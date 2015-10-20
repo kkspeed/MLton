@@ -12,7 +12,7 @@
 /*
  * All ML objects (including ML execution stacks) are allocated in a
  * contiguous heap.  The heap has the following general layout:
- * 
+ *
  *  -------------------------------------------------------------------------
  *  |    old generation    |               |  nursery  | cardMap | crossMap |
  *  -------------------------------------------------------------------------
@@ -24,11 +24,8 @@
 */
 
 typedef struct GC_heap {
-  pointer nursery; /* start of nursery */
-  size_t oldGenSize; /* size of old generation */
   size_t size; /* size of heap */
   pointer start; /* start of heap (and old generation) */
-  size_t withMapsSize; /* size of heap with card/cross maps */
 } *GC_heap;
 
 #define GC_HEAP_LIMIT_SLOP 512

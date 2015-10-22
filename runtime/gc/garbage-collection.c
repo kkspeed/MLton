@@ -154,8 +154,8 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
-            getThreadCurrent(s)->exnStack = s->exnStack;
+            //            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+            //            getThreadCurrent(s)->exnStack = s->exnStack;
             foreachGlobalObjptr(s, collectRootSet);
             pointer top, bottom;
             unsigned int i;

@@ -398,4 +398,4 @@ flags:
 
 .PHONY: clean
 clean:
-	../bin/clean
+	rm -rf `find -name "*.a" -or -name "*.o"`

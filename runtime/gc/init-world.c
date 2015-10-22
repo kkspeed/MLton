@@ -126,7 +126,7 @@ void initWorld (GC_state s) {
   //  createUMArrayHeap (s, &s->umarheap, avail_mem, avail_mem);
   createTLSFArrayHeap(s, &s->tlsfarheap, avail_mem);
 
-  createHeap (s, &s->heap, 100*MEGABYTES, 100*MEGABYTES);
+  createHeap (s, &s->heap, 100*MEGABYTES, 200*MEGABYTES);
 
   createHeap (s, &s->infHeap, 100*MEGABYTES, 100*MEGABYTES);
   s->gc_module = GC_UM;

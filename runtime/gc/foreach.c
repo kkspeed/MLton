@@ -54,7 +54,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
 
   header = getHeader (p);
   splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
-  if (DEBUG_DETAILED)
+  //  if (DEBUG_DETAILED)
     fprintf (stderr,
              "foreachObjptrInObject ("FMTPTR")"
              "  header = "FMTHDR
@@ -175,6 +175,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
           }
       }
   } else { /* stack */
+      fprintf(stderr, "[DBG] Entering stack!\n");
     GC_stack stack;
     pointer top, bottom;
     unsigned int i;

@@ -57,7 +57,6 @@ void performUMGC(GC_state s,
     for (uint32_t i=0; i<s->root_set_size; i++) {
         //        pointer p = (s->root_sets[i]);
         //        foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
-        fprintf(stderr, "Marking: 0x%x\n", s->root_sets[i]);
         umDfsMarkObjectsMark(s, &(s->root_sets[i]));
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
@@ -71,7 +70,6 @@ void performUMGC(GC_state s,
     for (pchunk=s->umheap.start;
          pchunk < end;
          pchunk+=step) {
-        fprintf(stderr, "[GC] IN collecting\n");
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
 
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&

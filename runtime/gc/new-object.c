@@ -28,9 +28,9 @@ pointer newUMObject (GC_state s,
     pointer result;
 
     frontier = s->frontier;
-    s->frontier += bytesRequested;
     *((GC_header*)frontier) = header;
     result = frontier + GC_NORMAL_HEADER_SIZE;
+    s->frontier = result + bytesRequested;
     return result;
 }
 

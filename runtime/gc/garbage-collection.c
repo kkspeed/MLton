@@ -61,6 +61,7 @@ void performUMGC(GC_state s,
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
+
     fprintf(stderr, "[GC] MARK DONE, collecting!\n");
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
@@ -72,26 +73,25 @@ void performUMGC(GC_state s,
          pchunk+=step) {
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
 
+        pthread_mutex_lock(&(s->object_mutex));
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
             //            if (DEBUG_MEM) {
                 /* fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n", */
                 /*         (uintptr_t)pc, pc->sentinel, pc->object_version); */
                 //            }
-                //            insertFreeChunk(s, &(s->umheap), pchunk);
+            insertFreeChunk(s, &(s->umheap), pchunk);
         }
-
+        pthread_mutex_unlock(&(s->object_mutex));
         /* if (!fullGC && s->fl_chunks >= ensureObjectChunksAvailable) { */
         /*     break; */
         /* } */
     }
 
-    /*
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
     while (current->next) {
         if (current->next->object_version < s->gc_object_version) {
             pthread_mutex_lock(&(s->array_mutex));
-            fprintf(stderr, "Collecting array, haha!\n");
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
@@ -99,7 +99,7 @@ void performUMGC(GC_state s,
         } else {
             current = current->next;
         }
-    } */
+    }
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
         //        pointer p = (s->root_sets[i]);
@@ -136,8 +136,10 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void collectRootSet(GC_state s, objptr* opp)
 {
-    if (isObjptr(*opp) && *opp != BOGUS_OBJPTR)
+    if (isObjptr(*opp)) {
+        //        getObjectType(s, opp);
         s->root_sets[s->root_set_size++] = *opp;
+    }
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
@@ -152,6 +154,8 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
+            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+            getThreadCurrent(s)->exnStack = s->exnStack;
             foreachGlobalObjptr(s, collectRootSet);
             pointer top, bottom;
             unsigned int i;

@@ -77,10 +77,10 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    if (tag == STACK_TAG)
-        return;
+    /* if (tag == STACK_TAG) */
+    /*     return; */
 
-    //    if (DEBUG_MEM)
+    if (DEBUG_MEM)
         getObjectType(s, opp);
 
     /* Using MLton's header to track if it's marked */

@@ -175,7 +175,6 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
           }
       }
   } else { /* stack */
-      fprintf(stderr, "[DBG] Entering stack!\n");
     GC_stack stack;
     pointer top, bottom;
     unsigned int i;

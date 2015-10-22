@@ -46,8 +46,8 @@
 #define C(ty, x) (*(ty*)(x))
 #define G(ty, i) (global##ty [i])
 #define GPNR(i) G(ObjptrNonRoot, i)
-//#define O(ty, b, o) (*(ty*)((b) + (o)))
-#define O(ty, b, o) (*(ty*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
+#define O(ty, b, o) (*(ty*)((b) + (o)))
+//#define O(ty, b, o) (*(ty*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
 #define X(ty, gc_stat, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
 //#define X(ty, gc_stat, b, i, s, o) (*(ty*)(UM_Array_offset((gc_stat), (b), (i), (s), (o))))
 #define S(ty, i) *(ty*)(StackTop + (i))
@@ -107,7 +107,7 @@
                 struct cont cont;                               \
                 /* register unsigned int frontier asm("g5"); */       \
                 uintptr_t l_nextFun = nextFun;                  \
-                register unsigned int stackTop asm("g6");
+                //                register unsigned int stackTop asm("g6");
 #else
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
@@ -115,7 +115,7 @@
      /*          Pointer frontier;  */             \
      /*          Pointer umfrontier; */              \
                 uintptr_t l_nextFun = nextFun;  \
-                Pointer stackTop;
+                //                Pointer stackTop;
 #endif
 
 #define ChunkSwitch(n)                                                  \

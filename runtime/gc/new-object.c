@@ -40,8 +40,6 @@ GC_stack newStack (GC_state s,
   GC_stack stack;
   reserved = 100 * 1024 * 1024;
   assert (isStackReservedAligned (s, reserved));
-  if (reserved > s->cumulativeStatistics.maxStackSize)
-    s->cumulativeStatistics.maxStackSize = reserved;
   stack = (GC_stack)(newUMObject (s, GC_STACK_HEADER,
                                   sizeofStackWithHeader (s, reserved),
                                   allocInOldGen));

@@ -53,7 +53,6 @@ GC_UM_Array_Chunk allocNextArrayChunk(GC_state s,
 void insertFreeChunk(GC_state s,
                      GC_UM_heap h,
                      pointer c) {
-    pthread_mutex_lock(&(s->object_mutex));
     GC_UM_Chunk pc = (GC_UM_Chunk) c;
     //    memset(pc->ml_object, 0, UM_CHUNK_PAYLOAD_SIZE);
     pc->next_chunk = h->fl_head;
@@ -61,7 +60,6 @@ void insertFreeChunk(GC_state s,
     pc->chunk_header = UM_CHUNK_HEADER_CLEAN;
     h->fl_head = pc;
     s->fl_chunks += 1;
-    pthread_mutex_unlock(&(s->object_mutex));
 }
 
 void insertArrayFreeChunk(GC_state s,

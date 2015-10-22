@@ -57,30 +57,35 @@ void performUMGC(GC_state s,
     for (uint32_t i=0; i<s->root_set_size; i++) {
         //        pointer p = (s->root_sets[i]);
         //        foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
+        fprintf(stderr, "Marking: 0x%x\n", s->root_sets[i]);
         umDfsMarkObjectsMark(s, &(s->root_sets[i]));
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
+    fprintf(stderr, "[GC] MARK DONE, collecting!\n");
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
 
+    fprintf(stderr, "[GC] before collecting\n");
     for (pchunk=s->umheap.start;
          pchunk < end;
          pchunk+=step) {
+        fprintf(stderr, "[GC] IN collecting\n");
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
+
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
             //            if (DEBUG_MEM) {
                 fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
                         (uintptr_t)pc, pc->sentinel, pc->object_version);
                 //            }
-            insertFreeChunk(s, &(s->umheap), pchunk);
+                //            insertFreeChunk(s, &(s->umheap), pchunk);
         }
 
-        if (!fullGC && s->fl_chunks >= ensureObjectChunksAvailable) {
-            break;
-        }
+        /* if (!fullGC && s->fl_chunks >= ensureObjectChunksAvailable) { */
+        /*     break; */
+        /* } */
     }
 
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
@@ -138,7 +143,7 @@ void collectRootSet(GC_state s, objptr* opp)
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {
     if (!force) {
-        if (s->fl_chunks > 200)
+        if (s->fl_chunks > 7500000)
             return;
     }
 
@@ -171,10 +176,10 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
                     s->object_alloc_version);
             s->gc_work = 1;
         }
-        s->gc_work = 0;
+        //        s->gc_work = 0;
         //        GC_collect_real(s, 0, true);
         pthread_mutex_unlock(&s->gc_stat_mutex);
         //               pthread_yield();
-        performUMGC(s, 0, 0, true);
+        //        performUMGC(s, 0, 0, true);
     }
 }

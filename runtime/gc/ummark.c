@@ -33,7 +33,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    if (DEBUG_MEM) {
+    //    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -62,7 +62,7 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-    }
+        //}
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -77,7 +77,10 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    if (DEBUG_MEM)
+    if (tag == STACK_TAG)
+        return;
+
+    //    if (DEBUG_MEM)
         getObjectType(s, opp);
 
     /* Using MLton's header to track if it's marked */
@@ -88,6 +91,8 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
                     (m == MARK_MODE));
         return;
     }
+
+
 
     if (m == MARK_MODE) {
         if (DEBUG_MEM)

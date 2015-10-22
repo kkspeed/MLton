@@ -48,7 +48,7 @@ void performUMGC(GC_state s,
 
 #ifdef PROFILE_UMGC
     long t_start = getCurrentTime();
-    fprintf(stderr, "[GC] Free chunk: %d, Obj Version: %lld, GC Version: %lld\n",
+    fprintf(stderr, "[GC] ENTER: Free chunk: %d, Obj Version: %lld, GC Version: %lld\n",
             s->fl_chunks,
             s->object_alloc_version,
             s->gc_object_version);
@@ -71,10 +71,10 @@ void performUMGC(GC_state s,
         GC_UM_Chunk pc = (GC_UM_Chunk)pchunk;
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
-            if (DEBUG_MEM) {
+            //            if (DEBUG_MEM) {
                 fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
                         (uintptr_t)pc, pc->sentinel, pc->object_version);
-            }
+                //            }
             insertFreeChunk(s, &(s->umheap), pchunk);
         }
 
@@ -87,7 +87,7 @@ void performUMGC(GC_state s,
     while (current->next) {
         if (current->next->object_version < s->gc_object_version) {
             pthread_mutex_lock(&(s->array_mutex));
-            //            fprintf(stderr, "Collecting array, haha!\n");
+            fprintf(stderr, "Collecting array, haha!\n");
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
@@ -98,7 +98,7 @@ void performUMGC(GC_state s,
     }
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
-        pointer p = (s->root_sets[i]);
+        //        pointer p = (s->root_sets[i]);
         //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
         umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
     }
@@ -132,7 +132,7 @@ void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
 
 void collectRootSet(GC_state s, objptr* opp)
 {
-    if (isObjptr(*opp))
+    if (isObjptr(*opp) && *opp != BOGUS_OBJPTR)
         s->root_sets[s->root_set_size++] = *opp;
 }
 

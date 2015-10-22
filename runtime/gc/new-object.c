@@ -58,9 +58,10 @@ pointer newUMObject (GC_state s,
     pointer result;
 
     frontier = s->frontier;
-    s->frontier += bytesRequested;
     *((GC_header*)frontier) = header;
-    result = frontier + GC_NORMAL_HEADER_SIZE;
+    s->frontier += GC_NORMAL_HEADER_SIZE;
+    result = frontier;
+    s->frontier += bytesRequested;
     return result;
 }
 
@@ -68,7 +69,7 @@ GC_stack newStack (GC_state s,
                    size_t reserved,
                    bool allocInOldGen) {
   GC_stack stack;
-  reserved = 100 * 1024 * 1024;
+  reserved = 10 * 1024 * 1024;
   assert (isStackReservedAligned (s, reserved));
   if (reserved > s->cumulativeStatistics.maxStackSize)
     s->cumulativeStatistics.maxStackSize = reserved;
@@ -90,7 +91,6 @@ GC_thread newThread (GC_state s, size_t reserved) {
   pointer res;
 
   assert (isStackReservedAligned (s, reserved));
-  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeader (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
   res = newUMObject (s, GC_THREAD_HEADER,
                      sizeofThread (s),

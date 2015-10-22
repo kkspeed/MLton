@@ -107,7 +107,7 @@ void performUMGC(GC_state s,
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     //    foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
     //    s->root_set_size = 0;
-    s->gc_object_version = s->object_alloc_version;
+    //    s->gc_object_version = s->object_alloc_version;
 #ifdef PROFILE_UMGC
     long t_end = getCurrentTime();
     fprintf(stderr, "[GC] Time: %ld, Free chunk: %d, Free array chunk: %d, "
@@ -144,6 +144,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
     if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
         if (s->gc_work == 0) {
+            s->gc_object_version = s->object_alloc_version;
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
@@ -171,9 +172,9 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->gc_work = 1;
         }
         s->gc_work = 0;
-        GC_collect_real(s, 0, true);
+        //        GC_collect_real(s, 0, true);
         pthread_mutex_unlock(&s->gc_stat_mutex);
-        //        pthread_yield();
-        //        performUMGC(s, 0, 0, true);
+        //               pthread_yield();
+        performUMGC(s, 0, 0, true);
     }
 }

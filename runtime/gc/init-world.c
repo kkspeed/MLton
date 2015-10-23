@@ -160,8 +160,8 @@ void initWorld (GC_state s) {
 
   s->gc_work = 0;
 
-  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
-  sleep(1);
+  //  pthread_create(&(s->gc_thread), NULL, gc_thread_func, (void*)s);
+  //  sleep(1);
 
   if (DEBUG_MEM) {
       fprintf(stderr, "UMFrontier start: "FMTPTR"\n", (uintptr_t)(s->umfrontier));

@@ -132,10 +132,7 @@ size_t sizeofStackWithHeader (ARG_USED_FOR_ASSERT GC_state s, size_t reserved) {
 }
 
 size_t sizeofStackInitialReserved (GC_state s) {
-  size_t res;
-
-  res = alignStackReserved(s, sizeofStackSlop (s));
-  return res;
+    return 100 * 1024 * 1024;
 }
 
 size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {

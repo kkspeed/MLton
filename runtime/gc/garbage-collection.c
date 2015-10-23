@@ -61,7 +61,13 @@ void performUMGC(GC_state s,
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
+    for (uint32_t i=0; i<s->root_set_size; i++) {
+        //        pointer p = (s->root_sets[i]);
+        //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
+        umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
+    }
 
+    return;
     fprintf(stderr, "[GC] MARK DONE, collecting!\n");
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
@@ -90,15 +96,16 @@ void performUMGC(GC_state s,
 
     GC_TLSF_array current = s->tlsfarheap.allocatedArray;
     while (current->next) {
+        pthread_mutex_lock(&(s->array_mutex));
         if (current->next->object_version < s->gc_object_version) {
-            pthread_mutex_lock(&(s->array_mutex));
             GC_TLSF_array tmp = current->next;
             current->next = current->next->next;
             tlsf_free((void*)tmp);
-            pthread_mutex_unlock(&(s->array_mutex));
+
         } else {
             current = current->next;
         }
+        pthread_mutex_unlock(&(s->array_mutex));
     }
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
@@ -179,10 +186,10 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
                     s->object_alloc_version);
             s->gc_work = 1;
         }
-        //        s->gc_work = 0;
+        s->gc_work = 0;
         //        GC_collect_real(s, 0, true);
         pthread_mutex_unlock(&s->gc_stat_mutex);
         //               pthread_yield();
-        //        performUMGC(s, 0, 0, true);
+        performUMGC(s, 0, 0, true);
     }
 }

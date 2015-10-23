@@ -39,9 +39,9 @@ void getObjectType(GC_state s, objptr *opp) {
             fprintf(stderr, "NORMAL!\n");
             if (p >= s->umheap.start &&
                 p < s->umheap.start + s->umheap.size) {
-                fprintf(stderr, "  ON UM HEAP!\n");
+                fprintf(stderr, "  ON UM HEAP: 0x%x!\n", p);
             } else {
-                fprintf(stderr, "  NOT ON UM HEAP\n");
+                fprintf(stderr, "  NOT ON UM HEAP: 0x%x\n", p);
             }
             break;
         case WEAK_TAG:
@@ -51,13 +51,13 @@ void getObjectType(GC_state s, objptr *opp) {
             fprintf(stderr, "ARRAY!\n");
             if (p >= s->tlsfarheap.start &&
                 p < s->tlsfarheap.start + s->tlsfarheap.size) {
-                fprintf(stderr, "  ON TLSF HEAP!\n");
+                fprintf(stderr, "  ON TLSF HEAP: 0x%x!\n", p);
             } else {
-                fprintf(stderr, "  NOT ON TLSF HEAP\n");
+                fprintf(stderr, "  NOT ON TLSF HEAP: 0x%x\n", p);
             }
             break;
         case STACK_TAG:
-            fprintf(stderr, "STACK\n");
+            fprintf(stderr, "STACK: 0x%x\n", p);
             break;
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
@@ -80,19 +80,22 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     /* if (tag == STACK_TAG) */
     /*     return; */
 
-    if (DEBUG_MEM)
-        getObjectType(s, opp);
+    //    if (DEBUG_MEM)
+
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
-        if (DEBUG_MEM)
-            fprintf(stderr, FMTPTR"marked by mark_mode: %d, RETURN\n",
-                    (uintptr_t)p,
-                    (m == MARK_MODE));
+        //        if (DEBUG_MEM)
+        fprintf(stderr, "===== TYPE =====\n");
+        getObjectType(s, opp);
+        fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n",
+                (uintptr_t)p,
+                (m == MARK_MODE));
+        fprintf(stderr, "===== END TYPE =====\n");
         return;
     }
 
-
+    getObjectType(s, opp);
 
     if (m == MARK_MODE) {
         if (DEBUG_MEM)
@@ -118,34 +121,34 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
                     (uintptr_t)p, *(getHeaderp(p)), header);
     }
 
-    if (tag == NORMAL_TAG) {
-        if (p >= s->umheap.start &&
-            p < (s->umheap.start + s->umheap.size)) {
-            GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
-            pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
+    /* if (tag == NORMAL_TAG) { */
+    /*     if (p >= s->umheap.start && */
+    /*         p < (s->umheap.start + s->umheap.size)) { */
+    /*         GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE); */
+    /*         pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version); */
 
-            if (DEBUG_MEM) {
-                fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
-                        " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
-                        pchunk->sentinel,
-                        (m == MARK_MODE), numObjptrs, pchunk->object_version);
-            }
+    /*         if (DEBUG_MEM) { */
+    /*             fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d," */
+    /*                     " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk, */
+    /*                     pchunk->sentinel, */
+    /*                     (m == MARK_MODE), numObjptrs, pchunk->object_version); */
+    /*         } */
 
-            if (NULL != pchunk->next_chunk) {
-                pchunk->next_chunk->object_version =
-                    MAX_VERSION(s->gc_object_version,
-                                pchunk->next_chunk->object_version);
-            }
-        }
-    }
+    /*         if (NULL != pchunk->next_chunk) { */
+    /*             pchunk->next_chunk->object_version = */
+    /*                 MAX_VERSION(s->gc_object_version, */
+    /*                             pchunk->next_chunk->object_version); */
+    /*         } */
+    /*     } */
+    /* } */
 
-    if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
-        p < s->tlsfarheap.size + s->tlsfarheap.start) {
-        GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
-        //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
-        arrayHeader->object_version = MAX_VERSION(s->gc_object_version,
-                                                  arrayHeader->object_version);
-    }
+    /* if (tag == ARRAY_TAG && p >= s->tlsfarheap.start && */
+    /*     p < s->tlsfarheap.size + s->tlsfarheap.start) { */
+    /*     GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array)); */
+    /*     //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic); */
+    /*     arrayHeader->object_version = MAX_VERSION(s->gc_object_version, */
+    /*                                               arrayHeader->object_version); */
+    /* } */
 
     if (numObjptrs > 0) {
         if (m == MARK_MODE)

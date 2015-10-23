@@ -61,12 +61,6 @@ void performUMGC(GC_state s,
         //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
-    for (uint32_t i=0; i<s->root_set_size; i++) {
-        //        pointer p = (s->root_sets[i]);
-        //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
-        umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
-    }
-
     return;
     fprintf(stderr, "[GC] MARK DONE, collecting!\n");
     pointer pchunk;

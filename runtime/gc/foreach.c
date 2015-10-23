@@ -286,3 +286,22 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "done foreachStackFrame\n");
 }
+
+void foreachObjptrInCurrentStack(GC_state s, GC_foreachObjptrFun f)
+{
+    pointer top = s->stackTop;
+    pointer bottom = s->stackBottom;
+    unsigned int i;
+    GC_returnAddress returnAddress;
+    GC_frameLayout frameLayout;
+    GC_frameOffsets frameOffsets;
+    while (top > bottom) {
+      returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
+      frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
+      frameOffsets = frameLayout->offsets;
+      top -= frameLayout->size;
+      for (i = 0 ; i < frameOffsets[0] ; ++i) {
+          callIfIsObjptr (s, f, (objptr*)(top + frameOffsets[i + 1]));
+      }
+    }
+}

@@ -12,12 +12,12 @@ typedef void (*GC_foreachObjptrFun) (GC_state s, objptr *opp);
 
 static inline void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp);
 /* foreachGlobalObjptr (s, f)
- * 
- * Apply f to each global object pointer into the heap. 
+ *
+ * Apply f to each global object pointer into the heap.
  */
 static inline void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
-/* foreachObjptrInObject (s, p, skipWeaks, f) 
- * 
+/* foreachObjptrInObject (s, p, skipWeaks, f)
+ *
  * Applies f to each object pointer in the object pointed to by p.
  * Returns pointer to the end of object, i.e. just past object.
  *
@@ -25,6 +25,8 @@ static inline void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
  */
 static inline pointer foreachObjptrInObject (GC_state s, pointer p,
                                              GC_foreachObjptrFun f, bool skipWeaks);
+
+static inline void foreachObjptrInCurrentStack(GC_state s, GC_foreachObjptrFun f);
 /* foreachObjptrInRange (s, front, back, f, skipWeaks)
  *
  * Apply f to each pointer between front and *back, which should be a
@@ -47,5 +49,7 @@ typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i);
  * Apply f to the frame index of each frame in the current stack.
  */
 static inline void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f);
+
+
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

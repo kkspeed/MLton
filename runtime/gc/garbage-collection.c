@@ -114,9 +114,9 @@ void performUMGC(GC_state s,
             s->fl_array_chunks);
 #endif
 
-    GC_stack currentStack = getStackCurrent(s);
     foreachGlobalObjptr (s, umDfsMarkObjectsMark);
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
+    foreachObjptrInCurrentStack(s, umDfsMarkObjectsMark);
+    //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
 
 //    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
 //    GC_stack currentStack = getStackCurrent(s);
@@ -161,7 +161,8 @@ void performUMGC(GC_state s,
     }
 
     //    fprintf(stderr, "GC returend!\n");
-    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
+    foreachObjptrInCurrentStack(s, umDfsMarkObjectsUnMark);
+    //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
 
 #ifdef PROFILE_UMGC
@@ -315,22 +316,7 @@ void ensureHasHeapBytesFree (GC_state s,
 }
 
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
-  enter (s);
-  /* When the mutator requests zero bytes, it may actually need as
-   * much as GC_HEAP_LIMIT_SLOP.
-   */
-  if (0 == bytesRequested)
-    bytesRequested = GC_HEAP_LIMIT_SLOP;
-  getThreadCurrent(s)->bytesNeeded = bytesRequested;
-  switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-  ensureInvariantForMutator (s, force);
-  assert (invariantForMutatorFrontier(s));
-  assert (invariantForMutatorStack(s));
-  leave (s);
-
-  if (DEBUG_MEM) {
-      fprintf(stderr, "GC_collect done\n");
-  }
+    performUMGC(s, 0, 0, true);
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {

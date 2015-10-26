@@ -115,7 +115,7 @@ void performUMGC(GC_state s,
 #endif
 
     foreachGlobalObjptr (s, umDfsMarkObjectsMark);
-    foreachObjptrInCurrentStack(s, umDfsMarkObjectsMark);
+    //    foreachObjptrInCurrentStack(s, umDfsMarkObjectsMark);
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsMark, FALSE);
 
 //    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
@@ -161,7 +161,7 @@ void performUMGC(GC_state s,
     }
 
     //    fprintf(stderr, "GC returend!\n");
-    foreachObjptrInCurrentStack(s, umDfsMarkObjectsUnMark);
+    //    foreachObjptrInCurrentStack(s, umDfsMarkObjectsUnMark);
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
     foreachGlobalObjptr (s, umDfsMarkObjectsUnMark);
 
@@ -316,7 +316,9 @@ void ensureHasHeapBytesFree (GC_state s,
 }
 
 void GC_collect_real(GC_state s, size_t bytesRequested, bool force) {
-    performUMGC(s, 0, 0, true);
+  getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+  getThreadCurrent(s)->exnStack = s->exnStack;
+  performUMGC(s, 0, 0, true);
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force) {

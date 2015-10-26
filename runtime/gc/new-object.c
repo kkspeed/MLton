@@ -89,8 +89,8 @@ GC_thread newThread (GC_state s, size_t reserved) {
   GC_thread thread;
   pointer res;
 
-  assert (isStackReservedAligned (s, reserved));
-  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeader (s, reserved) + sizeofThread (s));
+  //  assert (isStackReservedAligned (s, reserved));
+  //  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeader (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
   res = newUMObject (s, GC_THREAD_HEADER,
                      sizeofThread (s),

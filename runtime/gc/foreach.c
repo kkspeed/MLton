@@ -183,14 +183,16 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     GC_frameLayout frameLayout;
     GC_frameOffsets frameOffsets;
 
-    assert (STACK_TAG == tag);
+    fprintf(stderr, "STACK\n");
+    if (STACK_TAG != tag)
+        die("Not stack!!");
     stack = (GC_stack)p;
     bottom = getStackBottom (s, stack);
     top = getStackTop (s, stack);
-    if (DEBUG) {
+    //    if (DEBUG) {
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);
-    }
+      //    }
     assert (stack->used <= stack->reserved);
     while (top > bottom) {
       /* Invariant: top points just past a "return address". */
@@ -210,7 +212,8 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
           callIfIsObjptr (s, f, (objptr*)(top + frameOffsets[i + 1]));
       }
     }
-    assert(top == bottom);
+    if (top != bottom)
+        die("TOP != BOTTOM\n");
     p += sizeof (struct GC_stack) + stack->reserved;
   }
   return p;
@@ -295,12 +298,15 @@ void foreachObjptrInCurrentStack(GC_state s, GC_foreachObjptrFun f)
     GC_returnAddress returnAddress;
     GC_frameLayout frameLayout;
     GC_frameOffsets frameOffsets;
+    uint32_t count = 0;
     while (top > bottom) {
       returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
       frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
       frameOffsets = frameLayout->offsets;
       top -= frameLayout->size;
       for (i = 0 ; i < frameOffsets[0] ; ++i) {
+          if (isObjptr(*(objptr*)(top + frameOffsets[i + 1])))
+              count++;
           callIfIsObjptr (s, f, (objptr*)(top + frameOffsets[i + 1]));
       }
     }

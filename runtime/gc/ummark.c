@@ -49,6 +49,7 @@ void getObjectType(GC_state s, objptr *opp) {
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     pointer p = objptrToPointer(*opp, s->heap.start);
+
     if (DEBUG_MEM)
         fprintf(stderr, "original obj: 0x%x, obj: 0x%x\n",
                 (uintptr_t)*opp, (uintptr_t)p);
@@ -119,6 +120,8 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
                     pchunk->next_chunk->chunk_header &= ~UM_CHUNK_HEADER_MASK;
                 }
             }
+        } else {
+            //            fprintf(stderr, "NOT ON UM HEAP\n");
         }
     }
 
@@ -133,7 +136,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
         }
     }
 
-    if (numObjptrs > 0) {
+    if (numObjptrs > 0 || tag == STACK_TAG) {
         if (m == MARK_MODE)
             foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
         else

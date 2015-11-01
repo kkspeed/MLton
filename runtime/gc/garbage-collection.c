@@ -55,19 +55,14 @@ void performUMGC(GC_state s,
 #endif
 
     for (uint32_t i=0; i<s->root_set_size; i++) {
-        //        pointer p = (s->root_sets[i]);
-        //        foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
         umDfsMarkObjectsMark(s, &(s->root_sets[i]));
-        //umDfsMarkObjectsMark(s, (s->root_sets[i]));
     }
 
-    return;
-    fprintf(stderr, "[GC] MARK DONE, collecting!\n");
+    //    return;
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
 
-    fprintf(stderr, "[GC] before collecting\n");
     for (pchunk=s->umheap.start;
          pchunk < end;
          pchunk+=step) {
@@ -102,11 +97,11 @@ void performUMGC(GC_state s,
         pthread_mutex_unlock(&(s->array_mutex));
     }
 
+
     for (uint32_t i=0; i<s->root_set_size; i++) {
-        //        pointer p = (s->root_sets[i]);
-        //        foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
         umDfsMarkObjectsUnMark(s, &(s->root_sets[i]));
     }
+
 
     //    fprintf(stderr, "GC returend!\n");
     //    foreachObjptrInObject(s, (pointer) currentStack, umDfsMarkObjectsUnMark, FALSE);
@@ -139,6 +134,7 @@ void collectRootSet(GC_state s, objptr* opp)
 {
     if (isObjptr(*opp)) {
         //        getObjectType(s, opp);
+        //        fprintf(stderr, "ROOT SET COLLECTING: 0x%x\n", *opp);
         s->root_sets[s->root_set_size++] = *opp;
     }
 }
@@ -151,20 +147,23 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
     if (pthread_mutex_trylock(&s->gc_stat_mutex) == 0) {
         if (s->gc_work == 0) {
+            fprintf(stderr, "GC State addr: 0x%x, thread: 0x%x\n", s, s->currentThread);
             s->gc_object_version = s->object_alloc_version;
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            //            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
-            //            getThreadCurrent(s)->exnStack = s->exnStack;
+            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+            getThreadCurrent(s)->exnStack = s->exnStack;
+            foreachObjptrInObject(s, &(s->currentThread), collectRootSet, false);
             foreachGlobalObjptr(s, collectRootSet);
-            pointer top, bottom;
+
+            /*
+            pointer top = s->stackTop, bottom = s->stackBottom;
             unsigned int i;
             GC_returnAddress returnAddress;
             GC_frameLayout frameLayout;
             GC_frameOffsets frameOffsets;
-            bottom = s->stackBottom; //getStackBottom (s, stack);
-            top = s->stackTop;/* getStackTop (s, stack); */
+
             while (top > bottom) {
                 returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
                 frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
@@ -175,15 +174,19 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
                                     (objptr*)(top + frameOffsets[i + 1]));
                 }
             }
+            */
             fprintf(stderr, "Got root set, size: %d, at GC version: %lld, "
                     "object version: %lld!\n", s->root_set_size, s->gc_object_version,
                     s->object_alloc_version);
             s->gc_work = 1;
         }
+
+#ifndef MT_GC
         s->gc_work = 0;
-        //        GC_collect_real(s, 0, true);
+        GC_collect_real(s, 0, true);
+#endif
         pthread_mutex_unlock(&s->gc_stat_mutex);
         //               pthread_yield();
-        performUMGC(s, 0, 0, true);
+        //        performUMGC(s, 0, 0, true);
     }
 }

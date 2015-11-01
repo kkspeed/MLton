@@ -33,7 +33,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    //    if (DEBUG_MEM) {
+    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -62,7 +62,7 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-        //}
+    }
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -86,12 +86,12 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
         //        if (DEBUG_MEM)
-        fprintf(stderr, "===== TYPE =====\n");
+        //        fprintf(stderr, "===== TYPE =====\n");
         getObjectType(s, opp);
-        fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n",
-                (uintptr_t)p,
-                (m == MARK_MODE));
-        fprintf(stderr, "===== END TYPE =====\n");
+        /* fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n", */
+        /*         (uintptr_t)p, */
+        /*         (m == MARK_MODE)); */
+        //        fprintf(stderr, "===== END TYPE =====\n");
         return;
     }
 
@@ -121,36 +121,36 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
                     (uintptr_t)p, *(getHeaderp(p)), header);
     }
 
-    /* if (tag == NORMAL_TAG) { */
-    /*     if (p >= s->umheap.start && */
-    /*         p < (s->umheap.start + s->umheap.size)) { */
-    /*         GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE); */
-    /*         pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version); */
+    if (tag == NORMAL_TAG) {
+        if (p >= s->umheap.start &&
+            p < (s->umheap.start + s->umheap.size)) {
+            GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
+            pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
-    /*         if (DEBUG_MEM) { */
-    /*             fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d," */
-    /*                     " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk, */
-    /*                     pchunk->sentinel, */
-    /*                     (m == MARK_MODE), numObjptrs, pchunk->object_version); */
-    /*         } */
+            if (DEBUG_MEM) {
+                fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
+                        " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
+                        pchunk->sentinel,
+                        (m == MARK_MODE), numObjptrs, pchunk->object_version);
+            }
 
-    /*         if (NULL != pchunk->next_chunk) { */
-    /*             pchunk->next_chunk->object_version = */
-    /*                 MAX_VERSION(s->gc_object_version, */
-    /*                             pchunk->next_chunk->object_version); */
-    /*         } */
-    /*     } */
-    /* } */
+            if (NULL != pchunk->next_chunk) {
+                pchunk->next_chunk->object_version =
+                    MAX_VERSION(s->gc_object_version,
+                                pchunk->next_chunk->object_version);
+            }
+        }
+    }
 
-    /* if (tag == ARRAY_TAG && p >= s->tlsfarheap.start && */
-    /*     p < s->tlsfarheap.size + s->tlsfarheap.start) { */
-    /*     GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array)); */
-    /*     //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic); */
-    /*     arrayHeader->object_version = MAX_VERSION(s->gc_object_version, */
-    /*                                               arrayHeader->object_version); */
-    /* } */
+    if (tag == ARRAY_TAG && p >= s->tlsfarheap.start &&
+        p < s->tlsfarheap.size + s->tlsfarheap.start) {
+        GC_TLSF_array arrayHeader = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
+        //        fprintf(stderr, "Array 0x%x, magic: %d\n", p, arrayHeader->magic);
+        arrayHeader->object_version = MAX_VERSION(s->gc_object_version,
+                                                  arrayHeader->object_version);
+    }
 
-    if (numObjptrs > 0) {
+    if (numObjptrs > 0 || tag == STACK_TAG) {
         if (m == MARK_MODE)
             foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
         else

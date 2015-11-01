@@ -29,7 +29,7 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
   callIfIsObjptr (s, f, &s->callFromCHandlerThread);
-  callIfIsObjptr (s, f, &s->currentThread);
+  //  callIfIsObjptr (s, f, &s->currentThread);
   callIfIsObjptr (s, f, &s->savedThread);
   callIfIsObjptr (s, f, &s->signalHandlerThread);
 }
@@ -182,10 +182,13 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     GC_frameLayout frameLayout;
     GC_frameOffsets frameOffsets;
 
-    assert (STACK_TAG == tag);
+    fprintf(stderr, "MARKING STACK\n");
+    if (STACK_TAG != tag)
+        die("NOT STACK\n");
+
     stack = (GC_stack)p;
-    bottom = s->stackBottom; //getStackBottom (s, stack);
-    top = s->stackTop;/* getStackTop (s, stack); */
+    bottom = getStackBottom (s, stack);
+    top = getStackTop (s, stack);
     if (DEBUG) {
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);
@@ -193,10 +196,10 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     while (top > bottom) {
       /* Invariant: top points just past a "return address". */
       returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
-      if (DEBUG_MEM) {
+      //      if (DEBUG_MEM) {
           fprintf (stderr, "  top = "FMTPTR"  return address = "FMTRA"\n",
                    (uintptr_t)top, returnAddress);
-      }
+          //      }
       frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
       frameOffsets = frameLayout->offsets;
       top -= frameLayout->size;

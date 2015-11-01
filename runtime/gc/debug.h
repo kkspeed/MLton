@@ -10,6 +10,8 @@
 #define DEBUG FALSE
 #endif
 
+//#define MT_GC
+
 #define PROFILE_UMGC
 
 enum {

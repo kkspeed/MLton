@@ -29,7 +29,7 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
   callIfIsObjptr (s, f, &s->callFromCHandlerThread);
-  //  callIfIsObjptr (s, f, &s->currentThread);
+  callIfIsObjptr (s, f, &s->currentThread);
   callIfIsObjptr (s, f, &s->savedThread);
   callIfIsObjptr (s, f, &s->signalHandlerThread);
 }
@@ -188,7 +188,10 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
 
     stack = (GC_stack)p;
     bottom = getStackBottom (s, stack);
-    top = getStackTop (s, stack);
+    top = getStackTop(s, stack);//bottom + sizeofGCStateCurrentStackUsed (s);//, stack);
+
+    fprintf(stderr, "Stack: 0x%x, Top: 0x%x, Bottom: 0x%x\n", stack, top, bottom);
+
     if (DEBUG) {
       fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
                (uintptr_t)bottom, (uintptr_t)top);

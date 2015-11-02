@@ -58,7 +58,7 @@ void performUMGC(GC_state s,
         umDfsMarkObjectsMark(s, &(s->root_sets[i]));
     }
 
-    //    return;
+    return;
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
@@ -153,8 +153,11 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
             getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+            fprintf(stderr, "Stack used: %d\n", sizeofGCStateCurrentStackUsed(s));
             getThreadCurrent(s)->exnStack = s->exnStack;
-            foreachObjptrInObject(s, &(s->currentThread), collectRootSet, false);
+
+            GC_thread thread = (GC_thread)s->currentThread;
+            foreachObjptrInObject(s, thread->stack, collectRootSet, false);
             foreachGlobalObjptr(s, collectRootSet);
 
             /*

@@ -150,7 +150,7 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
                                                   arrayHeader->object_version);
     }
 
-    if (numObjptrs > 0 || tag == STACK_TAG) {
+    if (numObjptrs > 0) {
         if (m == MARK_MODE)
             foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
         else

@@ -58,7 +58,6 @@ void performUMGC(GC_state s,
         umDfsMarkObjectsMark(s, &(s->root_sets[i]));
     }
 
-    return;
     pointer pchunk;
     size_t step = sizeof(struct GC_UM_Chunk);
     pointer end = s->umheap.start + s->umheap.size - step;
@@ -136,7 +135,6 @@ void collectRootSet(GC_state s, objptr* opp)
         //        getObjectType(s, opp);
         //        fprintf(stderr, "ROOT SET COLLECTING: 0x%x\n", *opp);
         s->root_sets[s->root_set_size++] = *opp;
-        getObjectType(s, opp);
     }
 }
 
@@ -153,18 +151,18 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             s->object_alloc_version++;
             fprintf(stderr, "Object version: %lld\n", s->object_alloc_version);
             s->root_set_size = 0;
-            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
             fprintf(stderr, "Stack used: %d\n", sizeofGCStateCurrentStackUsed(s));
-            getThreadCurrent(s)->exnStack = s->exnStack;
+            //            getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+            //            getThreadCurrent(s)->exnStack = s->exnStack;
 
-            GC_thread thread = (GC_thread)s->currentThread;
-            /* foreachObjptrInObject(s, thread->stack, collectRootSet, false); */
-            /* foreachGlobalObjptr(s, collectRootSet); */
+            //            GC_thread thread = (GC_thread)s->currentThread;
+            //            foreachObjptrInObject(s, thread->stack, collectRootSet, false);
+            foreachGlobalObjptr(s, collectRootSet);
 
-            foreachObjptrInObject(s, thread->stack, simpleMark, false);
+            //            foreachObjptrInObject(s, thread->stack, simpleMark, false);
             //            foreachGlobalObjptr(s, simpleMark);
 
-            /*
+
             pointer top = s->stackTop, bottom = s->stackBottom;
             unsigned int i;
             GC_returnAddress returnAddress;
@@ -181,7 +179,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
                                     (objptr*)(top + frameOffsets[i + 1]));
                 }
             }
-            */
+
             fprintf(stderr, "Got root set, size: %d, at GC version: %lld, "
                     "object version: %lld!\n", s->root_set_size, s->gc_object_version,
                     s->object_alloc_version);
@@ -190,7 +188,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
 #ifndef MT_GC
         s->gc_work = 0;
-        //        GC_collect_real(s, 0, true);
+        GC_collect_real(s, 0, true);
 #endif
         pthread_mutex_unlock(&s->gc_stat_mutex);
         //               pthread_yield();

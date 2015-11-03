@@ -17,11 +17,12 @@ pointer GC_arrayAllocate(GC_state s,
 
 
     /* Array criteria needs to be addressed */
+    /*
     if (!array) {
         GC_collect(s, 0, true);
         fprintf(stderr, "Cannot allocate array, GC!\n");
         array = (pointer) tlsf_malloc(allocSize);
-    }
+        }*/
 
     GC_TLSF_array arrayHeader = (GC_TLSF_array) array;
     arrayHeader->object_version = s->object_alloc_version;

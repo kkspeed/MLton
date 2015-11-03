@@ -1578,13 +1578,19 @@ structure Objptrs =
                QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
                                      WordX.le (w, w', {signed = false}))
             val shift = Operand.word (WordX.one WordSize.shiftArg)
+            (* Cancel marked bit to prevent matching failure *)
+            val markHeader = IntInf.<< (1, Word.fromInt 31)
+            val markMask = Operand.word (WordX.fromIntInf (IntInf.notb markHeader,
+                                                           WordSize.shiftArg))
+            val (s0, tmp) =
+                Statement.andb (Offset { base = test
+                                       , offset = Runtime.headerOffset ()
+                                       , ty = Type.objptrHeader ()},
+                                markMask)
             val (s, tag) =
-               Statement.rshift (Offset { base = test
-                                        , offset = Runtime.headerOffset ()
-                                        , ty = Type.objptrHeader ()},
-                                 shift)
+                Statement.rshift (tmp, shift)
          in
-            ([s], Switch (Switch.T {cases = cases,
+            ([s0, s], Switch (Switch.T {cases = cases,
                                     default = default,
                                     size = WordSize.objptrHeader (),
                                     test = tag}))

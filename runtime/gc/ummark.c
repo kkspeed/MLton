@@ -188,14 +188,15 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
         if (p >= s->umheap.start &&
             p < (s->umheap.start + s->umheap.size)) {
             GC_UM_Chunk pchunk = (GC_UM_Chunk)(p - GC_NORMAL_HEADER_SIZE);
-            pchunk->object_version = MAX_VERSION(s->gc_object_version, pchunk->object_version);
+            pchunk->object_version =
+                MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
-            if (DEBUG_MEM) {
+            //            if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
                         " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
                         pchunk->sentinel,
                         (m == MARK_MODE), numObjptrs, pchunk->object_version);
-            }
+                //            }
 
             if (NULL != pchunk->next_chunk) {
                 pchunk->next_chunk->object_version =

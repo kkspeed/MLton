@@ -71,9 +71,9 @@ void performUMGC(GC_state s,
         if ((pc->chunk_header & UM_CHUNK_IN_USE) &&
             pc->object_version < s->gc_object_version) {
             //            if (DEBUG_MEM) {
-                /* fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n", */
-                /*         (uintptr_t)pc, pc->sentinel, pc->object_version); */
-                //            }
+            fprintf(stderr, "Collecting: "FMTPTR", %d, %d\n",
+                    (uintptr_t)pc, pc->sentinel, pc->object_version);
+            //        }
             insertFreeChunk(s, &(s->umheap), pchunk);
         }
         pthread_mutex_unlock(&(s->object_mutex));

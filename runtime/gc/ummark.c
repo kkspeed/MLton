@@ -33,7 +33,7 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
-    if (DEBUG_MEM) {
+    //    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
@@ -62,7 +62,71 @@ void getObjectType(GC_state s, objptr *opp) {
         default:
             die("getObjetctType: swith: Shouldn't be here!\n");
         }
-    }
+        //    }
+}
+
+void getType1(GC_state s, GC_objectTypeTag tag, pointer p) {
+  GC_UM_Chunk pc;
+  GC_TLSF_array ar;
+  if (p >= s->umheap.start &&
+      p < s->umheap.start + s->umheap.size) {
+    fprintf(stderr, "  UM, ");
+  }
+
+  if (p >= s->tlsfarheap.start &&
+      p < s->tlsfarheap.start + s->tlsfarheap.size) {
+    fprintf(stderr, " TLSF, ");
+  }
+
+  if (p >= s->heap.start &&
+      p < s->heap.start + s->heap.size) {
+    fprintf(stderr, " STACK, ");
+  }
+
+  switch (tag) {
+  case NORMAL_TAG:
+    pc = (GC_UM_Chunk)(p - 4);
+    fprintf(stderr, " NORMAL, %d, header: 0x%x, starting: 0x%x, real_end: 0x%x\n", pc->sentinel,
+            *((uint32_t*)(pc->ml_object)), pc->ml_object,
+            p - 4 + sizeof(struct GC_UM_Chunk));
+    break;
+  case WEAK_TAG:
+    fprintf(stderr, " WEAK\n");
+    break;
+  case ARRAY_TAG:
+    ar = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
+    fprintf(stderr, " ARRAY, %d, header: 0x%x\n", ar->magic, ar->array_ml_header);
+    break;
+  case STACK_TAG:
+    fprintf(stderr, " STACK\n");
+    break;
+  default:
+    die("getObjetctType: swith: Shouldn't be here!\n");
+  }
+}
+
+void simpleMark(GC_state s, objptr *opp) {
+  pointer p = objptrToPointer(*opp, s->heap.start);
+  uint16_t bytesNonObjptrs;
+  uint16_t numObjptrs;
+  GC_objectTypeTag tag;
+
+  GC_header* headerp = getHeaderp(p);
+  GC_header header = *headerp;
+  splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+
+  uint32_t dbg = bytesNonObjptrs;
+  uint32_t sz = bytesNonObjptrs + numObjptrs * OBJPTR_SIZE;
+
+  header = header | MARK_MASK;
+  *headerp = header;
+
+  fprintf(stderr, "Headerp: 0x%x, Header: 0x%x, simple mark: 0x%x, bytesNonObjptr: "
+          "%d, numObjptr: %d, size: %d, end: 0x%x, opp: 0x%x", headerp, *headerp, p,
+          bytesNonObjptrs, numObjptrs, sz, p + sz, opp);
+  getType1(s, tag, p);
+
+
 }
 
 void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
@@ -85,17 +149,16 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
-        //        if (DEBUG_MEM)
         //        fprintf(stderr, "===== TYPE =====\n");
-        getObjectType(s, opp);
+        //        getObjectType(s, opp);
         /* fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n", */
         /*         (uintptr_t)p, */
         /*         (m == MARK_MODE)); */
-        //        fprintf(stderr, "===== END TYPE =====\n");
+        /*        fprintf(stderr, "===== END TYPE =====\n"); */
         return;
     }
 
-    getObjectType(s, opp);
+    //    getObjectType(s, opp);
 
     if (m == MARK_MODE) {
         if (DEBUG_MEM)

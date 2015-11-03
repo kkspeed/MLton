@@ -130,7 +130,10 @@ void initWorld (GC_state s) {
 
   createHeap (s, &s->infHeap, 100*MEGABYTES, 100*MEGABYTES);
   s->gc_module = GC_UM;
-  fprintf(stderr, "Heap start: 0x%x\n", s->heap.start);
+  fprintf(stderr, "UMHeap: [0x%x, 0x%x]\n", s->umheap.start, s->umheap.start + s->umheap.size);
+  fprintf(stderr, "TLSFHeap: [0x%x, 0x%x]\n", s->tlsfarheap.start,
+          s->tlsfarheap.start + s->tlsfarheap.size);
+  fprintf(stderr, "Stack Heap start: [0x%x, 0x%x]\n", s->heap.start, s->heap.start + s->heap.size);
   start = alignFrontier (s, s->heap.start);
   s->umarfrontier = s->umarheap.start;
   s->frontier = start;

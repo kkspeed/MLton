@@ -143,8 +143,8 @@ UM_CPointer_offset(GC_state gc_stat, Pointer p, C_Size_t o, C_Size_t s)
         return (p + o);
     }
 
-    if (DEBUG_MEM)
-       DBG(p, o, s, "go to next chunk");
+    //    if (DEBUG_MEM)
+    DBG(p, o, s, "go to next chunk");
     return (Pointer)(current_chunk->next_chunk->ml_object + (o + 4 + s) -
                      UM_CHUNK_PAYLOAD_SIZE);
 }

@@ -136,6 +136,7 @@ void collectRootSet(GC_state s, objptr* opp)
         //        getObjectType(s, opp);
         //        fprintf(stderr, "ROOT SET COLLECTING: 0x%x\n", *opp);
         s->root_sets[s->root_set_size++] = *opp;
+        getObjectType(s, opp);
     }
 }
 
@@ -157,8 +158,11 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
             getThreadCurrent(s)->exnStack = s->exnStack;
 
             GC_thread thread = (GC_thread)s->currentThread;
-            foreachObjptrInObject(s, thread->stack, collectRootSet, false);
-            foreachGlobalObjptr(s, collectRootSet);
+            /* foreachObjptrInObject(s, thread->stack, collectRootSet, false); */
+            /* foreachGlobalObjptr(s, collectRootSet); */
+
+            foreachObjptrInObject(s, thread->stack, simpleMark, false);
+            //            foreachGlobalObjptr(s, simpleMark);
 
             /*
             pointer top = s->stackTop, bottom = s->stackBottom;
@@ -186,7 +190,7 @@ void GC_collect (GC_state s, size_t bytesRequested, bool force) {
 
 #ifndef MT_GC
         s->gc_work = 0;
-        GC_collect_real(s, 0, true);
+        //        GC_collect_real(s, 0, true);
 #endif
         pthread_mutex_unlock(&s->gc_stat_mutex);
         //               pthread_yield();

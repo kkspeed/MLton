@@ -223,3 +223,12 @@ Pointer UM_Array_offset(GC_state gc_stat, Pointer base, C_Size_t index,
 
     die("UM_Array_Offset: shouldn't be here!");
 }
+
+void resetMark(GC_state gc_stat,
+               Objptr objptr)
+{
+    if (objptr == 0x1 || objptr == 0x2 || objptr == 0x0)  return;
+    pointer p = objptrToPointer(objptr, gc_stat->heap.start);
+    GC_header* headerp = (GC_header*)(p - GC_HEADER_SIZE);
+    *headerp &= ~MARK_MASK;
+}

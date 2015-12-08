@@ -54,7 +54,7 @@ void insertFreeChunk(GC_state s,
                      GC_UM_heap h,
                      pointer c) {
     GC_UM_Chunk pc = (GC_UM_Chunk) c;
-    //    memset(pc->ml_object, 0, UM_CHUNK_PAYLOAD_SIZE);
+    memset(pc->ml_object, 0, UM_CHUNK_PAYLOAD_SIZE);
     pc->next_chunk = h->fl_head;
     pc->sentinel = UM_CHUNK_SENTINEL_UNUSED;
     pc->chunk_header = UM_CHUNK_HEADER_CLEAN;

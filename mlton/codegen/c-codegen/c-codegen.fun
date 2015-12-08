@@ -744,12 +744,18 @@ fun output {program as Machine.Program.T {chunks,
                   (print "\t"
                    ; (case s of
                          Move {dst, src} =>
-                            print
-                            (move {dst = operandToString dst,
-                                   dstIsMem = Operand.isMem dst,
-                                   src = operandToString src,
-                                   srcIsMem = Operand.isMem src,
-                                   ty = Operand.ty dst})
+                            let
+                                val () = print "asm volatile (\"\":::\"memory\");\n\t"
+                            in
+                                print (move {dst = operandToString dst,
+                                             dstIsMem = Operand.isMem dst,
+                                             src = operandToString src,
+                                             srcIsMem = Operand.isMem src,
+                                             ty = Operand.ty dst});
+                                if Operand.isMem src andalso Type.isObjptr (Operand.ty dst)
+                                then print ("\tresetMark(GCState, " ^ fetchOperand src ^ ");\n")
+                                else ()
+                            end
                        | Noop => ()
                        | PrimApp {args, dst, prim} =>
                             let

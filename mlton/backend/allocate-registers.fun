@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor AllocateRegisters (S: ALLOCATE_REGISTERS_STRUCTS): ALLOCATE_REGISTERS = 
+functor AllocateRegisters (S: ALLOCATE_REGISTERS_STRUCTS): ALLOCATE_REGISTERS =
 struct
 
 open S
@@ -127,7 +127,7 @@ structure Allocation:
                                        then loop (alloc, a', a :: ac)
                                     else
                                        let
-                                          val (a'' as {offset = o', size = s'}, ac) = 
+                                          val (a'' as {offset = o', size = s'}, ac) =
                                              coalesce ()
                                           val alloc =
                                              List.appendRev
@@ -202,7 +202,7 @@ structure Allocation:
                     case List.peek (rss, fn rs =>
                                     case rs of
                                        [] => false
-                                     | r :: _ => 
+                                     | r :: _ =>
                                           CType.equals
                                           (t, Type.toCType (Register.ty r))) of
                        NONE => ref {alloc = [], next = 0}
@@ -256,7 +256,7 @@ structure Allocation:
        fun getRegister (T {registers, ...}, ty) =
           Registers.get (registers, ty)
 
-       fun new (stack, registers) = 
+       fun new (stack, registers) =
           T {registers = Registers.new registers,
              stack = ref (Stack.new stack)}
    end
@@ -360,7 +360,7 @@ fun allocate {argOperands,
           in
              ()
           end)
-      fun allocateVar (x: Var.t, a: Allocation.t): unit = 
+      fun allocateVar (x: Var.t, a: Allocation.t): unit =
          let
             val {operand, ty} = varInfo x
          in
@@ -379,7 +379,7 @@ fun allocate {argOperands,
                                 Operand.Register
                                 (Allocation.getRegister (a, ty))
                        val () = removePlace x
-                       val _ = 
+                       val _ =
                           case operand of
                              NONE => ()
                            | SOME r => r := SOME oper
@@ -410,7 +410,7 @@ fun allocate {argOperands,
                let
                   val (stack, {offset = handler, ...}) =
                      Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
-                  val (_, {offset = link, ...}) = 
+                  val (_, {offset = link, ...}) =
                      Allocation.Stack.get (stack, Type.exnStack ())
                in
                   SOME {handler = handler, link = link}
@@ -419,7 +419,7 @@ fun allocate {argOperands,
       fun getOperands (xs: Var.t vector): Operand.t vector =
          Vector.map (xs, fn x => valOf (! (valOf (#operand (varInfo x)))))
       val getOperands =
-         Trace.trace 
+         Trace.trace
          ("AllocateRegisters.getOperands",
           Vector.layout Var.layout, Vector.layout Operand.layout)
          getOperands
@@ -428,7 +428,7 @@ fun allocate {argOperands,
                               Property.initRaise ("labelInfo", R.Label.layout))
       val setLabelInfo =
          Trace.trace2
-         ("AllocateRegisters.setLabelInfo", 
+         ("AllocateRegisters.setLabelInfo",
           R.Label.layout, Info.layout, Unit.layout)
          setLabelInfo
       (* Do a DFS of the control-flow graph. *)
@@ -448,7 +448,7 @@ fun allocate {argOperands,
                          val extra =
                             case handlerLive of
                                NONE => extra
-                             | SOME h => 
+                             | SOME h =>
                                   Operand.stackOffset {offset = handler,
                                                        ty = Type.label h}
                                   :: extra
@@ -476,7 +476,7 @@ fun allocate {argOperands,
                  | SOME {handler, link} =>
                       StackOffset.T {offset = handler,
                                      ty = Type.label (Label.newNoname ())}
-                      :: StackOffset.T {offset = link, 
+                      :: StackOffset.T {offset = link,
                                         ty = Type.exnStack ()}
                       :: stackInit
              val a = Allocation.new (stackInit, registersInit)
@@ -557,7 +557,7 @@ fun allocate {argOperands,
        labelInfo = labelInfo}
    end
 
-val allocate = 
+val allocate =
    Trace.trace
    ("AllocateRegisters.allocate",
     fn {function, ...} => Func.layout (Function.name function),

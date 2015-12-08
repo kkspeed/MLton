@@ -43,15 +43,15 @@
 /*                      Memory                       */
 /* ------------------------------------------------- */
 
-#define C(ty, x) (*(ty*)(x))
+#define C(ty, x) (*(ty volatile*)(x))
 #define G(ty, i) (global##ty [i])
 #define GPNR(i) G(ObjptrNonRoot, i)
-//#define O(ty, b, o) (*(ty*)((b) + (o)))
-#define O(ty, b, o) (*(ty*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
-#define X(ty, gc_stat, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
+//#define O(ty, b, o) (*(ty volatile*)((b) + (o)))
+#define O(ty, b, o) (*(ty volatile*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
+#define X(ty, gc_stat, b, i, s, o) (*(ty volatile*)((b) + ((i) * (s)) + (o)))
 //#define X(ty, gc_stat, b, i, s, o) (*(ty*)(UM_Array_offset((gc_stat), (b), (i), (s), (o))))
-#define S(ty, i) *(ty*)(StackTop + (i))
-#define CHOFF(ty, b, o) (*(ty*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
+#define S(ty, i) *(ty volatile*)(StackTop + (i))
+#define CHOFF(ty, b, o) (*(ty volatile*)(UM_CPointer_offset(GCState, (b), (o), sizeof(ty))))
 //#define CHOFF(gc_stat, ty, b, o, s) (*(ty*)(UM_Chunk_Next_offset((gc_stat), (b), (o), (s))))
 
 /* ------------------------------------------------- */

@@ -33,13 +33,16 @@ void getObjectType(GC_state s, objptr *opp) {
     GC_objectTypeTag tag;
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
+    GC_UM_Chunk pc;
     //    if (DEBUG_MEM) {
         switch (tag) {
         case NORMAL_TAG:
             fprintf(stderr, "NORMAL!\n");
             if (p >= s->umheap.start &&
                 p < s->umheap.start + s->umheap.size) {
-                fprintf(stderr, "  ON UM HEAP: 0x%x!\n", p);
+                pc = (GC_UM_Chunk)(p - 4);
+                fprintf(stderr, "  ON UM HEAP: 0x%x, mark version: %lld, gc: %lld!\n", p,
+                        pc->object_version, s->gc_object_version);
             } else {
                 fprintf(stderr, "  NOT ON UM HEAP: 0x%x\n", p);
             }
@@ -70,35 +73,33 @@ void getType1(GC_state s, GC_objectTypeTag tag, pointer p) {
   GC_TLSF_array ar;
   if (p >= s->umheap.start &&
       p < s->umheap.start + s->umheap.size) {
-    fprintf(stderr, "  UM, ");
+    fprintf(stderr, "  location='UM' ");
   }
 
   if (p >= s->tlsfarheap.start &&
       p < s->tlsfarheap.start + s->tlsfarheap.size) {
-    fprintf(stderr, " TLSF, ");
+    fprintf(stderr, " location='TLSF' ");
   }
 
   if (p >= s->heap.start &&
       p < s->heap.start + s->heap.size) {
-    fprintf(stderr, " STACK, ");
+    fprintf(stderr, " location='STACK' ");
   }
 
   switch (tag) {
   case NORMAL_TAG:
     pc = (GC_UM_Chunk)(p - 4);
-    fprintf(stderr, " NORMAL, %d, header: 0x%x, starting: 0x%x, real_end: 0x%x\n", pc->sentinel,
-            *((uint32_t*)(pc->ml_object)), pc->ml_object,
-            p - 4 + sizeof(struct GC_UM_Chunk));
+    fprintf(stderr, " type='NORMAL' ");
     break;
   case WEAK_TAG:
-    fprintf(stderr, " WEAK\n");
+    fprintf(stderr, " type='WEAK' ");
     break;
   case ARRAY_TAG:
     ar = (GC_TLSF_array)(p - sizeof(struct GC_TLSF_array));
-    fprintf(stderr, " ARRAY, %d, header: 0x%x\n", ar->magic, ar->array_ml_header);
+    fprintf(stderr, " type='ARRAY' ");
     break;
   case STACK_TAG:
-    fprintf(stderr, " STACK\n");
+    fprintf(stderr, " type='STACK' ");
     break;
   default:
     die("getObjetctType: swith: Shouldn't be here!\n");
@@ -129,8 +130,12 @@ void simpleMark(GC_state s, objptr *opp) {
 
 }
 
-void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
+void umDfsMarkObjects(GC_state s, objptr *_opp, GC_markMode m) {
+    objptr* opp = _opp;
+
     pointer p = objptrToPointer(*opp, s->heap.start);
+    if (p == 0x1)
+        return;
     if (DEBUG_MEM)
         fprintf(stderr, "original obj: 0x%x, obj: 0x%x\n",
                 (uintptr_t)*opp, (uintptr_t)p);
@@ -146,16 +151,20 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
 
     //    if (DEBUG_MEM)
 
+    fprintf(stderr, "<GC:Item>\n<GC:Addr");
+    getType1(s, tag, p);
+    fprintf(stderr, ">0x%x</GC:Addr>\n", p);
 
     /* Using MLton's header to track if it's marked */
     if (isPointerMarkedByMode(p, m)) {
-        //        fprintf(stderr, "===== TYPE =====\n");
-        //        getObjectType(s, opp);
-        /* fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n", */
-        /*         (uintptr_t)p, */
-        /*         (m == MARK_MODE)); */
-        /*        fprintf(stderr, "===== END TYPE =====\n"); */
-        return;
+        //      fprintf(stderr, "===== TYPE =====\n");
+      getObjectType(s, opp);
+      //      fprintf(stderr, FMTPTR" marked by mark_mode: %d, RETURN\n",
+      //              (uintptr_t)p,
+      //              (m == MARK_MODE));
+      //      fprintf(stderr, "===== END TYPE =====\n");
+      fprintf(stderr, "</GC:Item>\n");
+      return;
     }
 
     //    getObjectType(s, opp);
@@ -191,12 +200,13 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
             pchunk->object_version =
                 MAX_VERSION(s->gc_object_version, pchunk->object_version);
 
-            //            if (DEBUG_MEM) {
+            if (DEBUG_MEM) {
                 fprintf(stderr, "umDfsMarkObjects: chunk: "FMTPTR", sentinel: %d,"
-                        " mark_mode: %d, objptrs: %d, version: %lld\n", (uintptr_t)pchunk,
+                        " mark_mode: %d, objptrs: %d, version: %lld, gc_version: %lld\n", (uintptr_t)pchunk,
                         pchunk->sentinel,
-                        (m == MARK_MODE), numObjptrs, pchunk->object_version);
-                //            }
+                        (m == MARK_MODE), numObjptrs, pchunk->object_version,
+                        s->gc_object_version);
+            }
 
             if (NULL != pchunk->next_chunk) {
                 pchunk->next_chunk->object_version =
@@ -215,11 +225,15 @@ void umDfsMarkObjects(GC_state s, objptr *opp, GC_markMode m) {
     }
 
     if (numObjptrs > 0) {
+        fprintf(stderr, "<GC:ChildGroup>\n");
         if (m == MARK_MODE)
             foreachObjptrInObject(s, p, umDfsMarkObjectsMark, false);
         else
             foreachObjptrInObject(s, p, umDfsMarkObjectsUnMark, false);
+        fprintf(stderr, "</GC:ChildGroup>\n");
     }
+
+    fprintf(stderr, "</GC:Item>\n");
 }
 
 void markUMArrayChunks(GC_state s, GC_UM_Array_Chunk p, GC_markMode m) {

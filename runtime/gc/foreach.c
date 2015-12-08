@@ -44,9 +44,9 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
  */
 pointer foreachObjptrInObject (GC_state s, pointer p,
                                GC_foreachObjptrFun f, bool skipWeaks) {
-  if (DEBUG_MEM) {
-      fprintf(stderr, "foreach object in 0x%x\n", (uintptr_t)p);
-  }
+  //  if (DEBUG_MEM) {
+      fprintf(stderr, "FOREACH object in 0x%x\n", (uintptr_t)p);
+      //  }
   GC_header header;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;

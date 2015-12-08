@@ -562,6 +562,13 @@ let
          let
             fun handlerOffset () = #handler (valOf handlerLinkOffset)
             fun linkOffset () = #link (valOf handlerLinkOffset)
+            fun isObject operand =
+              case operand of
+                  M.Operand.Offset { offset, ty, ... } =>
+                  Bytes.isZero offset andalso Type.isObjptr ty
+                | M.Operand.ChunkedOffset { offset, ty, ... } =>
+                  Bytes.isZero offset andalso Type.isObjptr ty
+                | _ => false
             datatype z = datatype R.Statement.t
          in
             case s of
@@ -570,14 +577,37 @@ let
                      orelse (case #operand (varInfo var) of
                                 VarOperand.Const _ => false
                               | _ => true)
-                     then (Vector.new1
-                           (M.Statement.move {dst = varOperand var,
-                                              src = translateOperand src}))
+                  then
+                      let
+                          val src' = translateOperand src
+                          val mv = M.Statement.move {dst = varOperand var,
+                                                     src = src'}
+                      in
+                          if isObject src'
+                          then Vector.new2 (
+                                  M.Statement.PrimApp
+                                      { args = Vector.new2 (M.Operand.GCState, src')
+                                      , dst = NONE
+                                      , prim = Prim.umObjectPreWrite}
+                                , mv)
+                          else Vector.new1 mv
+                      end
                   else Vector.new0 ()
              | Move {dst, src} =>
-                  Vector.new1
-                  (M.Statement.move {dst = translateOperand dst,
-                                     src = translateOperand src})
+               let
+                   val dst' = translateOperand dst
+                   val src' = translateOperand src
+                   val mv = M.Statement.move {dst = dst', src = src'}
+               in
+                   if isObject src'
+                   then Vector.new2
+                            ( M.Statement.PrimApp
+                                  { args = Vector.new2 (M.Operand.GCState, src')
+                                  , dst = NONE
+                                  , prim = Prim.umObjectPreWrite}
+                            , mv)
+                   else Vector.new1 mv
+               end
              | ChunkedObject {dst, header, size, numChunks} =>
                M.Statement.chunkedObject { dst = varOperand (#1 dst)
                                          , header = header

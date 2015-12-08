@@ -22,7 +22,7 @@ PRIVATE uintptr_t nextFun;                                              \
 PRIVATE int returnToC;                                                  \
 static void MLton_callFromC () {                                        \
         struct cont cont;                                               \
-        GC_state s;                                                     \
+        volatile GC_state s;                                            \
                                                                         \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \

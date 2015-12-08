@@ -143,7 +143,7 @@ void initWorld (GC_state s) {
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   s->object_alloc_version = 1;
   s->gc_object_version = 0;
-  s->root_sets = (objptr*)malloc(sizeof(objptr) * 1024);
+  s->root_sets = (objptr*)malloc(sizeof(objptr) * 1024 * 10);
   s->root_set_size = 0;
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);

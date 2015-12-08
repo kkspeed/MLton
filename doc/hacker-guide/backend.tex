@@ -1,3 +1,35 @@
+Backend consists compilation passes of RSSA and Machine. It serves as
+a middle layer between the (heavily optimized) SSA pass and lower
+level code generators.
+
+Various interestings happen at the backend part. Objects are finally
+concretely represented (packed-representation). GC checks are
+implemented (limit-check). Signal handlers are implemented
+(implement-handlers). Live variables are detected (live). Temporary
+variable allocation locations are determined
+(allocate-registers). They are depicted in the following graph:
+
+\begin{figure}
+\centering
+\includegraphics[width=.5\textwidth]{figures/mlton-backend.png}
+\caption{MLton Backend Overview}
+\label{fig:backend-overview}
+\end{figure}
+
+\subsection{Packed Representation}
+Recall that at runtime, there are multiple types of objects: Normal,
+Stack, Array and Weak. We do a re-cap of how arrays and normal objects
+look like here. They are depicted in Figure.~\ref{fig:object-layout}.
+
+
+
+\subsection{Limit Check}
+
+\subsection{Implement Handlers}
+
+\subsection{Liveness}
+
+\subsection{Allocate Registers}
 For limit checks, when the fixed size allocations that follow a variable size
 allocation are stored in the ``bytesAllocated'' field of the limitCheck field in
 the AllocateArray variant of machine-output.sig

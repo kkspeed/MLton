@@ -17,7 +17,7 @@ TEX_FILES := \
 	sources.tex		\
 
 FIG_FILES := \
-	structure.ps		\
+	structure.eps		\
 
 all:	main.ps
 

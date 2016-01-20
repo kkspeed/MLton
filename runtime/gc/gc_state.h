@@ -90,6 +90,7 @@ struct GC_state {
   pthread_mutex_t array_mutex;
   pthread_mutex_t gc_stat_mutex;
   pthread_t gc_thread;
+
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
